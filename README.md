@@ -51,3 +51,50 @@ This cached template will stay in your cache for ever, and will be regenerated i
 * the version included in the template is updated
 * the internal version of `django-adv-cache-tag` is updated
 * options for the default cache mode are updated
+
+## How it works
+
+### Partial caching
+
+Your template :
+
+```django
+{% load adv_cache %}
+{% cache ... %}
+    foo
+    {% nocache %}
+        bar
+    {% endnocache %}
+    baz
+{% endcache %}
+```
+
+Cached version (we ignore versioning and compress here, just to see how it works):
+
+```django
+foo
+{% endRAW_xyz %}
+    bar
+{% RAW_xyz %}
+baz
+```
+
+When cached version is loaded, we parse :
+
+```django
+{% RAW_xyz %}
+foo
+{% endRAW_xyz %}
+    bar
+{% RAW_xyz %}
+baz
+{% endRAW_xyz %}
+```
+
+The first `{% RAW_xyz %}` and the last `{% endRAW_xyz %}` are not included in the cached version and added before parsing, only to save some bytes.
+
+The `xyz` part of the `RAW` and `endRAW` templatetags depends on the `SECRET_KEY` and so is unique for a given site. 
+
+It allows to avoid at max the possible collisions with parsed content in the cached version. 
+
+We could use `{% nocache %}` and `{% endnocache %}` instead of `{% RAW_xyz %}` and `{% endRAW_xyz %}` but... it the parsed template, stored in the cache results in a html including one of these strings, our final template would be broken, so we use long ones with a hash (but we can not be sure at 100% these strings could not be in the cached html, but for common usages it should suffice)
