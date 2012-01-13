@@ -93,8 +93,12 @@ baz
 
 The first `{% RAW_xyz %}` and the last `{% endRAW_xyz %}` are not included in the cached version and added before parsing, only to save some bytes.
 
-The `xyz` part of the `RAW` and `endRAW` templatetags depends on the `SECRET_KEY` and so is unique for a given site. 
+The `xyz` part of the `RAW` and `endRAW` templatetags depends on the `SECRET_KEY` and so is unique for a given site.
 
-It allows to avoid at max the possible collisions with parsed content in the cached version. 
+It allows to avoid at max the possible collisions with parsed content in the cached version.
 
 We could use `{% nocache %}` and `{% endnocache %}` instead of `{% RAW_xyz %}` and `{% endRAW_xyz %}` but... it the parsed template, stored in the cache results in a html including one of these strings, our final template would be broken, so we use long ones with a hash (but we can not be sure at 100% these strings could not be in the cached html, but for common usages it should suffice)
+
+## License
+
+`django-adv-cache-tag` is published under the MIT License (see LICENSE.txt)
