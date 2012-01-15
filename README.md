@@ -485,4 +485,4 @@ We could use `{% nocache %}` and `{% endnocache %}` instead of `{% RAW_xyz %}` a
 
 ## License
 
-`django-adv-cache-tag` is published under the MIT License (see LICENSE.txt)
+`django-adv-cache-tag` is published under the MIT License (see the LICENSE file)
