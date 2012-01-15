@@ -10,7 +10,7 @@ import adv_cache_tag
 long_description = codecs.open('README.md', "r", "utf-8").read()
 
 setup(
-    name = "django-adv-template-cache",
+    name = "django-adv-cache-tag",
     version = adv_cache_tag.__version__,
     author = adv_cache_tag.__author__,
     author_email = adv_cache_tag.__contact__,
