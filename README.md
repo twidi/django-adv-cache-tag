@@ -21,6 +21,22 @@ With `django-adv-cache-tag` you can :
 * define `{% nocache %}...{% endnocache %}` blocks, inside your cached template, that will only be rendered when asked (for these parts, the content of the template is cached, not the rendered result)
 * easily define your own algorithm, as we provide a single class you can inherit from, and simply change options or whatever behaviour you want, and define your own tags for them
 
+
+## Installation
+
+`django-adv-cache-tag` is available on Pypi:
+
+```
+pip install django-adv-cache-tag
+```
+
+Or you can find it on github: https://github.com/twidi/django-adv-cache-tag
+
+When installed, just add `adv_cache_tag` to your `INSTALLED_APPS` in the `settings.py` file of your django project.
+
+See examples in the next section to see how it works (basically the same way as the default django cache templatetag)
+
+
 ## Features
 
 
