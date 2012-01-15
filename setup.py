@@ -17,7 +17,7 @@ setup(
     description = adv_cache_tag.__doc__,
     keywords = "django cache templatetag template",
     url = adv_cache_tag.__homepage__,
-    download_url = "https://github.com/twidi/django-adv-cache-tag/tarball/develop",
+    download_url = "https://github.com/twidi/django-adv-cache-tag/downloads",
     packages = find_packages(),
     include_package_data=True,
     license = "MIT",
