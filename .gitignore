@@ -1,0 +1,10 @@
+*.py[co]
+.*.sw?
+.directory
+*.vim
+*~
+*.DS_Store
+*.egg-info
+build
+dist
+
