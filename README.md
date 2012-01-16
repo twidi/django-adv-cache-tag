@@ -54,11 +54,12 @@ This version will be used in the **content** of the cached template, instead of 
 
 So if you like the principle of a unique key for a given template for a given object/user or whatever, be sure to always use the same arguments, except the last one, and activate the `ADV_CACHE_VERSIONING`.
 
-Note that we also manage an internal version number, which will always be compared to the cached one. This internal version number is only updated when the internal algorithm of `django-adv-cache-tag` changes.
+Note that we also manage an internal version number, which will always be compared to the cached one. This internal version number is only updated when the internal algorithm of `django-adv-cache-tag` changes. But you can update it to invalidate all cached templates by adding a `ADV_CACHE_VERSION` to your settings (our internel version and the value from this settings will be concatenated to obtain the real used internal version)
 
 #### Settings
 
 `ADV_CACHE_VERSIONING`, default to `False`
+`ADV_CACHE_VERSION`, default to `""`
 
 #### Example
 
@@ -233,6 +234,44 @@ MyCacheTag.register(register) # 'cache' and 'nocache' are the default values
 ```
 
 All settings have matching variables in the `Meta` class, so you can override one or many of them in your own classes. See the "Settings" part to see them
+
+### Internal version
+
+When your template file is updated, the only way to invalidate all cached versions of this template is to update the fragment name or the arguments passed to the templatetag.
+
+With `django-adv-cache-tag` you can do this with versioning, by manage your own version as the last argument to the templetag. But if you want to use the power of the versioning system of `django-adv-cache-tag`, it can be too verbose:
+
+```django
+{% load adv_cache %}
+{% with template_version=obj.date_last_updated|stringformat:"s"|add:"v1" %}
+    {% cache 0 myobj_main_template obj.pk obj.date_last_updated %}
+    ...
+    {% endcache %}
+{% endwith %}
+```
+
+`django-adv-cache-tag` provides a way to do this easily, with the `ADV_CACHE_VERSION` settings. But by updating it, **all** cached version will be invalidated, not only those you updated.
+
+To do this, simple create your own tag with a specific internal version:
+
+```python
+class MyCacheTag(CacheTag):
+    class Meta(CacheTag.Meta):
+       internal_version = "v1"
+MyCacheTag.register('my_cache')
+```
+
+And then in your template, you can simply do
+
+```django
+{% load my_cache_tags %}
+{% my_cache 0 myobj_main_template obj.pk obj.date_last_updated %}
+...
+{% endmy_cache %}
+```
+
+Each time you update the content of your template and want invalidation, simply change the `internal_version` in your `MyCacheTag` class (or you can use a settings for this)
+
 
 ### Change the cache backend
 
@@ -446,6 +485,7 @@ If you want to do more, feel free to look at the source code of the `CacheTag` c
 * `ADV_CACHE_COMPRESS_SPACES` to activate spaces compression, default to `False` (`compress_spaces` in the `Meta` class)
 * `ADV_CACHE_INCLUDE_PK` to activate the "primary key" feature, default to `False` (`include_pk` in the `Meta` class)
 * `ADV_CACHE_BACKEND` to choose the cache backend to use, default to `"default"` (`cache_backend` in the `Meta` class)
+* `ADV_CACHE_VERSION` to create your own internal version (will be concatened to the real internal version of `django-adv-cache-tag`), default to `""` (`internal_version` in the `Meta` class)
 
 
 ## How it works

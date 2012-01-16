@@ -13,6 +13,7 @@ from django.utils.hashcompat import sha_constructor, md5_constructor
 from django.conf import settings
 from django.utils.http import urlquote
 from django.core.cache import get_cache
+from django.utils.encoding import smart_str
 
 class CacheNodeMetaClass(type):
     """
@@ -37,6 +38,7 @@ class CacheTag(object):
         * ADV_CACHE_COMPRESS_SPACES
         * ADV_CACHE_INCLUDE_PK
         * ADV_CACHE_BACKEND
+        * ADV_CACHE_VERSION
 
     Or inherit from this class and don't forget to register your tag :
 
@@ -96,6 +98,9 @@ class CacheTag(object):
 
         # The cache backend to use (or use the "default" one)
         cache_backend = getattr(settings, 'ADV_CACHE_BACKEND', 'default')
+
+        # Part of the INTERNAL_VERSION configurable via settings
+        internal_version = getattr(settings, 'ADV_CACHE_VERSION', '')
 
 
     # Use a metaclass to use the right class in the Node classe, and assign Meta to _meta
@@ -169,6 +174,10 @@ class CacheTag(object):
         # the version used in the cached templatetag
         self.content_version = None
 
+        # Final "INTERNAL_VERSION"
+        if self._meta.internal_version:
+            self.INTERNAL_VERSION = '%s|%s' % (self.__class__.INTERNAL_VERSION, self._meta.internal_version)
+
         # prepare all parameters passed to the templatetag
         self.expire_time = None
         self.version = None
@@ -177,7 +186,6 @@ class CacheTag(object):
         # get the cache and cache key
         self.cache = self.get_cache_object()
         self.cache_key = self.get_cache_key()
-
 
     def prepare_params(self):
         """
@@ -211,7 +219,7 @@ class CacheTag(object):
         if not self.node.version:
             return None
         try:
-            version = self.node.version.resolve(self.context)
+            version = smart_str('%s' % self.node.version.resolve(self.context))
         except template.VariableDoesNotExist:
             raise template.TemplateSyntaxError('"%s" tag got an unknown variable: %r' % (self.node.nodename, self.node.version.var))
 
