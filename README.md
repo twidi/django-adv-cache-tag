@@ -124,6 +124,9 @@ Of course, this cost some time and CPU cycles, but you can save a lot of memory 
 
 To activate these feature, simply set to `True` the settings defined below.
 
+WARNING : If the cache backend used use pickle and its default protocol, compression is useless because binary is not really well handled and the final size stored in the cache will be largely bigger than the compressed one.
+So check for this before activating this option. It's ok for the default django backends (at least in 1.4), but not for django-redis-cache, waiting for my pull-request, but you can use my version: https://github.com/twidi/django-redis-cache/tree/pickle_version
+
 #### Settings
 
 `ADV_CACHE_COMPRESS`, default to `False`, to activate the compression via `zlib`
