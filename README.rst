@@ -8,6 +8,8 @@ Django advanced cache template tag:
 -  partial caching
 -  easily extendable/customizable
 
+Readable documentation on http://documentup.com/twidi/django-adv-cache-tag
+
 Introduction
 ------------
 
