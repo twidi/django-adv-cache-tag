@@ -7,6 +7,8 @@ Django advanced cache template tag:
 * partial caching
 * easily extendable/customizable
 
+Readable documentation on http://documentup.com/twidi/django-adv-cache-tag
+
 ## Introduction
 
 First, notice that the arguments of the `{% cache %}` templatetag provided by `django-adv-cache-tag` are the same as for the default cache templatetag included in django, so it's very easy to use this new one.
