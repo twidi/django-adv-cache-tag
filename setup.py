@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 
 import adv_cache_tag
 
-long_description = codecs.open('README.md', "r", "utf-8").read()
+long_description = codecs.open('README.rst', "r", "utf-8").read()
 
 setup(
     name = "django-adv-cache-tag",
@@ -17,7 +17,7 @@ setup(
     description = adv_cache_tag.__doc__,
     keywords = "django cache templatetag template",
     url = adv_cache_tag.__homepage__,
-    download_url = "https://github.com/twidi/django-adv-cache-tag/downloads",
+    download_url = "https://github.com/twidi/django-adv-cache-tag/tags",
     packages = find_packages(),
     include_package_data=True,
     license = "MIT",
