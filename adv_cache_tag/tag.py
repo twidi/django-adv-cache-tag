@@ -6,10 +6,10 @@ try:
     import cPickle as pickle
 except:
     import pickle
+import hashlib
 
 from django import template
 from django.template.base import libraries
-from django.utils.hashcompat import sha_constructor, md5_constructor
 from django.conf import settings
 from django.utils.http import urlquote
 from django.core.cache import get_cache
@@ -61,8 +61,8 @@ class CacheTag(object):
     RE_SPACELESS = re.compile(r'\s\s+')
 
     # generate a token for this site, based on the secret_key
-    RAW_TOKEN = 'RAW_' + sha_constructor(
-                    'RAW_TOKEN_SALT1' + sha_constructor(
+    RAW_TOKEN = 'RAW_' + hashlib.sha1(
+                    'RAW_TOKEN_SALT1' + hashlib.sha1(
                         'RAW_TOKEN_SALT2' + settings.SECRET_KEY
                     ).digest()
                 ).hexdigest()
@@ -230,7 +230,7 @@ class CacheTag(object):
         Take all the arguements passed after the fragment name and return a
         hashed version which will be used in the cahe key
         """
-        return md5_constructor(u':'.join([urlquote(var) for var in self.vary_on])).hexdigest()
+        return hashlib.md5(u':'.join([urlquote(var) for var in self.vary_on])).hexdigest()
 
     def get_pk(self):
         """
