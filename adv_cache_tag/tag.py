@@ -1,12 +1,12 @@
 # django-adv-cache-tag / Copyright Stephane "TWidi" Angel <s.angel@twidi.com> / MIT License
 
+import hashlib
 import re
 import zlib
 try:
     import cPickle as pickle
 except:
     import pickle
-import hashlib
 
 from django import template
 from django.template.base import libraries
