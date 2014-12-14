@@ -12,7 +12,14 @@ from django import template
 from django.template.base import libraries
 from django.conf import settings
 from django.utils.http import urlquote
-from django.core.cache import get_cache
+
+try:
+    from django.core.cache import caches
+    def get_cache(name):
+        return caches[name]
+except ImportError:
+    from django.core.cache import get_cache
+
 from django.utils.encoding import smart_str
 
 class CacheNodeMetaClass(type):
