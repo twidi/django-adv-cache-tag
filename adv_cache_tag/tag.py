@@ -15,7 +15,8 @@ from django.utils.http import urlquote
 
 try:
     from django.core.cache import caches
-    get_cache = caches.get
+    def get_cache(name):
+        return caches[name]
 except ImportError:
     from django.core.cache import get_cache
 
