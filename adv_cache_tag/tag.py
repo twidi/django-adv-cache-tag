@@ -428,6 +428,8 @@ class CacheTag(object):
         except template.TemplateSyntaxError, e:
             raise e
         except:
+            if settings.DEBUG:
+                raise
             return ''
 
         if self.partial or self.RAW_TOKEN_START not in self.content:
