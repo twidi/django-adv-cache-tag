@@ -8,7 +8,12 @@ try:
 except:
     import pickle
 
-from django import template
+try:
+    from django.template import BLOCK_TAG_START  # Before django 1.8.x
+    from django import template
+except ImportError:
+    from django.template import base as template
+
 from django.template.base import libraries
 from django.conf import settings
 from django.utils.http import urlquote
