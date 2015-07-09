@@ -822,6 +822,12 @@ command):
 
     ./runtests.sh
 
+Supported versions
+------------------
+
+This library is guaranteed to work with django 1.3 to 1.8, with python
+2.7
+
 |Bitdeli Badge|
 
 .. |Bitdeli Badge| image:: https://d2weczhvl823v0.cloudfront.net/twidi/django-adv-cache-tag/trend.png

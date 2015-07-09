@@ -11,3 +11,11 @@ except ImportError:
 else:
     def get_cache(name):
         return caches[name]
+
+try:
+    from django.template import BLOCK_TAG_START
+except ImportError:
+    # Django >= 1.8
+    from django.template import base as template
+else:
+    from django import template

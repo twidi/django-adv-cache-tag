@@ -4,14 +4,12 @@ import hashlib
 import re
 import zlib
 
-
-from django import template
 from django.conf import settings
 from django.template.base import libraries
 from django.utils.encoding import smart_str
 from django.utils.http import urlquote
 
-from .compat import get_cache, pickle
+from .compat import get_cache, pickle, template
 
 
 class CacheNodeMetaClass(type):

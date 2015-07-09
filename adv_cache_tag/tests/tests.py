@@ -4,9 +4,8 @@ import zlib
 from datetime import datetime
 
 from django.conf import settings
-from django.template import BLOCK_TAG_END, BLOCK_TAG_START, Context, Template
 
-from adv_cache_tag.compat import get_cache, pickle
+from adv_cache_tag.compat import get_cache, pickle, template
 from adv_cache_tag.tag import CacheTag
 
 from .compat import make_template_fragment_key, override_settings, SafeText, TestCase
@@ -59,8 +58,10 @@ class BasicTestCase(TestCase):
         ).hexdigest()
 
         # tokens to use around the already parsed parts of the cached template
-        CacheTag.RAW_TOKEN_START = BLOCK_TAG_START + CacheTag.RAW_TOKEN + BLOCK_TAG_END
-        CacheTag.RAW_TOKEN_END = BLOCK_TAG_START + 'end' + CacheTag.RAW_TOKEN + BLOCK_TAG_END
+        CacheTag.RAW_TOKEN_START = template.BLOCK_TAG_START + CacheTag.RAW_TOKEN + \
+                                   template.BLOCK_TAG_END
+        CacheTag.RAW_TOKEN_END = template.BLOCK_TAG_START + 'end' + CacheTag.RAW_TOKEN + \
+                                 template.BLOCK_TAG_END
 
     def setUp(self):
         """Clean stuff and create an object to use in templates, and some counters."""
@@ -117,7 +118,7 @@ class BasicTestCase(TestCase):
         """Utils to render a template text with a context given as a dict."""
         if context_dict is None:
             context_dict = {'obj': self.obj}
-        return Template(template_text).render(Context(context_dict))
+        return template.Template(template_text).render(template.Context(context_dict))
 
     def assertStripEqual(self, first, second):
         """Like ``assertEqual`` for strings, but after calling ``strip`` on both arguments."""
