@@ -45,7 +45,7 @@ With ``django-adv-cache-tag`` you can :
 Installation
 ------------
 
-``django-adv-cache-tag`` is available on Pypi:
+``django-adv-cache-tag`` is available on PyPI:
 
 ::
 
@@ -94,7 +94,7 @@ Note that we also manage an internal version number, which will always
 be compared to the cached one. This internal version number is only
 updated when the internal algorithm of ``django-adv-cache-tag`` changes.
 But you can update it to invalidate all cached templates by adding a
-``ADV_CACHE_VERSION`` to your settings (our internel version and the
+``ADV_CACHE_VERSION`` to your settings (our internal version and the
 value from this settings will be concatenated to obtain the real used
 internal version)
 
@@ -145,7 +145,7 @@ between the fragment name and the hash :
     :1:template.cache.your_fragment_name.you_pk.64223ccf70bbb65a3a4aceac37e21016
 
 Although the main use of this primary key is to have one cached fragment
-per object, so we can use the objet primary key, you can use whatever
+per object, so we can use the object primary key, you can use whatever
 you want, an id, a string...
 
 To add a primary key, simply set the ``ADV_CACHE_INCLUDE_PK`` settings
@@ -214,7 +214,7 @@ Example
 ^^^^^^^
 
 No example since you don't have to change anything to your templatetag
-call to use thiss, just set the settings.
+call to use this, just set the settings.
 
 Choose your cache backend
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -226,7 +226,7 @@ In django, you can define many cache backends. But with the default
 cache templatetag, you cannot say which one use, it will automatically
 be the default one.
 
-``django-adv-cache-tag`` can do this for your by provinding a settings,
+``django-adv-cache-tag`` can do this for your by providing a settings,
 ``ADV_CACHE_BACKEND`` which will take the name of a cache backend
 defined in your settings. And by extending the provided ``CacheTag``
 object, you can even define many backends to be used by many
@@ -286,7 +286,7 @@ Extending the default cache tag
 -------------------------------
 
 If the five settings are not enough for you, or if you want to have a
-templatag with a different behavior as the default provided one, you
+templatetag with a different behavior as the default provided one, you
 will be happy to know that ``django-adv-cache-tag`` was written with
 easily extending in mind.
 
@@ -369,7 +369,7 @@ cached versions of this template is to update the fragment name or the
 arguments passed to the templatetag.
 
 With ``django-adv-cache-tag`` you can do this with versioning, by manage
-your own version as the last argument to the templetag. But if you want
+your own version as the last argument to the templatetag. But if you want
 to use the power of the versioning system of ``django-adv-cache-tag``,
 it can be too verbose:
 
@@ -457,7 +457,7 @@ Change the cache key
 
 The ``CacheTag`` class provides three class to create the cache key:
 
--  ``get_base_cache_key``, which returns a formatable string
+-  ``get_base_cache_key``, which returns a formattable string
    ("template.%(nodename)s.%(name)s.%(pk)s.%(hash)s" by default if
    ``include_pk`` is ``True`` or
    "template.%(nodename)s.%(name)s.%(hash)s" if ``False``
@@ -683,7 +683,7 @@ list, with description, default value, and corresponding field in the
 -  ``ADV_CACHE_BACKEND`` to choose the cache backend to use, default to
    ``"default"`` (``cache_backend`` in the ``Meta`` class)
 -  ``ADV_CACHE_VERSION`` to create your own internal version (will be
-   concatened to the real internal version of ``django-adv-cache-tag``),
+   concatenated to the real internal version of ``django-adv-cache-tag``),
    default to ``""`` (``internal_version`` in the ``Meta`` class)
 
 How it works

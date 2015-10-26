@@ -17,7 +17,7 @@ With `django-adv-cache-tag` you can :
 
 * add a version number (int, string, date or whatever, it will be stringified) to your templatetag : the version will be compared to the cached one, and the exact same cache key will be used for the new cached template, avoiding keeping old unused keys in your cache, allowing you to cache forever.
 * avoid to be afraid of an incompatible update in our algorithm, because we also use an internal version number, updated only when the internal algorithm changes
-* define your own cache keys (or simplee, just add the primary key (or what you want, it's a templatetag parameter) to this cache key
+* define your own cache keys (or simply, just add the primary key (or what you want, it's a templatetag parameter) to this cache key
 * compress the data to be cached, to reduce memory consumption in your cache backend, and network latency (but it will use more time and cpu to compress/decompress, your choice)
 * choose which cache backend will be used
 * define `{% nocache %}...{% endnocache %}` blocks inside your cached template, that will only be rendered when asked (for these parts, the content of the template is cached, not the rendered result)
@@ -26,13 +26,13 @@ With `django-adv-cache-tag` you can :
 
 ## Installation
 
-`django-adv-cache-tag` is available on Pypi:
+`django-adv-cache-tag` is available on PyPI:
 
 ```
 pip install django-adv-cache-tag
 ```
 
-Or you can find it on github: https://github.com/twidi/django-adv-cache-tag
+Or you can find it on Github: https://github.com/twidi/django-adv-cache-tag
 
 When installed, just add `adv_cache_tag` to your `INSTALLED_APPS` in the `settings.py` file of your django project.
 
@@ -94,7 +94,7 @@ You may want to have more explicit cache keys, so with `django-adv-cache-tag` yo
 :1:template.cache.your_fragment_name.your_pk.64223ccf70bbb65a3a4aceac37e21016
 ```
 
-Although the main use of this primary key is to have one cached fragment per object, so we can use the objet primary key, you can use whatever you want, an id, a string...
+Although the main use of this primary key is to have one cached fragment per object, so we can use the object primary key, you can use whatever you want, an id, a string...
 
 To add a primary key, simply set the `ADV_CACHE_INCLUDE_PK` setting to `True`, and the first argument (after the fragment's name) will be used as a pk.
 
@@ -247,7 +247,7 @@ All the `django-adv-cache-tag` settings have a matching variable in the `Meta` c
 
 When your template file is updated, the only way to invalidate all cached versions of this template is to update the fragment name or the arguments passed to the templatetag.
 
-With `django-adv-cache-tag` you can do this with versioning, by managing your own version as the last argument to the templetag. But if you want to use the power of the versioning system of `django-adv-cache-tag`, it can be too verbose:
+With `django-adv-cache-tag` you can do this with versioning, by managing your own version as the last argument to the templatetag. But if you want to use the power of the versioning system of `django-adv-cache-tag`, it can be too verbose:
 
 ```django
 {% load adv_cache %}
@@ -324,7 +324,7 @@ The value returned by the `get_cache_object` should be a cache backend object, b
 
 The `CacheTag` class provides three classes to create the cache key:
 
-* `get_base_cache_key`, which returns a formatable string ("template.%(nodename)s.%(name)s.%(pk)s.%(hash)s" by default if `include_pk` is `True` or "template.%(nodename)s.%(name)s.%(hash)s" if `False`
+* `get_base_cache_key`, which returns a formattable string ("template.%(nodename)s.%(name)s.%(pk)s.%(hash)s" by default if `include_pk` is `True` or "template.%(nodename)s.%(name)s.%(hash)s" if `False`
 * `get_cache_key_args`, which returns the arguments to use in the previous string
 * `get_cache_key`, which combine the two
 
@@ -495,7 +495,7 @@ If you want to do more, feel free to look at the source code of the `CacheTag` c
 * `ADV_CACHE_COMPRESS_SPACES` to activate spaces compression, default to `False` (`compress_spaces` in the `Meta` class)
 * `ADV_CACHE_INCLUDE_PK` to activate the "primary key" feature, default to `False` (`include_pk` in the `Meta` class)
 * `ADV_CACHE_BACKEND` to choose the cache backend to use, default to `"default"` (`cache_backend` in the `Meta` class)
-* `ADV_CACHE_VERSION` to create your own internal version (will be concatened to the real internal version of `django-adv-cache-tag`), default to `""` (`internal_version` in the `Meta` class)
+* `ADV_CACHE_VERSION` to create your own internal version (will be concatenated to the real internal version of `django-adv-cache-tag`), default to `""` (`internal_version` in the `Meta` class)
 
 
 ## How it works

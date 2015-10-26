@@ -7,4 +7,5 @@
 *.egg-info
 build
 dist
-
+.idea
+.venv
