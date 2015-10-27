@@ -371,7 +371,7 @@ class MyCacheTag(CacheTag):
     def prepare_params(self):
         """ Resolve the foo variable to it's real content """
         super(MyCacheTag, self).prepare_params()
-        self.foo = template.resolve_variable(self.node.foo, self.context)
+        self.foo = template.Variable(self.node.foo).resolve(self.context)
 
     @classmethod
     def get_template_node_arguments(cls, tokens):
@@ -591,7 +591,7 @@ Or simply launch the ``runtests.sh`` script (it will run this exact command):
 
 ## Supported versions
 
-This library is guaranteed to work with django 1.3 to 1.8, with python 2.7
+This library is guaranteed to work with django 1.3 to 1.9, with python 2.7
 
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/twidi/django-adv-cache-tag/trend.png)](https://bitdeli.com/free "Bitdeli Badge")

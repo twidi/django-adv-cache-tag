@@ -38,6 +38,14 @@ from .compat import override_settings, SafeText, TestCase
     ADV_CACHE_INCLUDE_PK = False,
     ADV_CACHE_BACKEND = 'default',
     ADV_CACHE_VERSION = '',
+
+    # For django >= 1.8 (RemovedInDjango110Warning appears in 1.9)
+    TEMPLATES = [
+        {
+            'BACKEND': 'django.template.backends.django.DjangoTemplates',
+            'APP_DIRS': True,
+        },
+    ]
 )
 class BasicTestCase(TestCase):
     """First basic test case to be able to test python/django compatibility."""

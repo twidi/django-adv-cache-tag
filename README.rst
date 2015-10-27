@@ -540,7 +540,7 @@ fragment name:
         def prepare_params(self):
             """ Resolve the foo variable to it's real content """
             super(MyCacheTag, self).prepare_params()
-            self.foo = template.resolve_variable(self.node.foo, self.context)
+            self.foo = template.Variable(self.node.foo).resolve(self.context)
 
         @classmethod
         def get_template_node_arguments(cls, tokens):
@@ -830,7 +830,7 @@ command):
 Supported versions
 ------------------
 
-This library is guaranteed to work with django 1.3 to 1.8, with python
+This library is guaranteed to work with django 1.3 to 1.9, with python
 2.7
 
 |Bitdeli Badge|

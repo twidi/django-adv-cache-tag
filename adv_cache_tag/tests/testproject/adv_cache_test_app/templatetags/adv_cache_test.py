@@ -26,7 +26,7 @@ class TestCacheTag(CacheTag):
 
     def prepare_params(self):
         """ Resolve the multiplicator variable to it's real content """
-        self.multiplicator = int(template.resolve_variable(self.node.multiplicator, self.context))
+        self.multiplicator = int(template.Variable(self.node.multiplicator).resolve(self.context))
         super(TestCacheTag, self).prepare_params()
 
     def get_expire_time(self):

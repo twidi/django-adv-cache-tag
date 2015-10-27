@@ -5,11 +5,10 @@ import re
 import zlib
 
 from django.conf import settings
-from django.template.base import libraries
 from django.utils.encoding import smart_str
 from django.utils.http import urlquote
 
-from .compat import get_cache, pickle, template
+from .compat import get_cache, get_template_libraries, pickle, template
 
 
 class Node(template.Node):
@@ -195,7 +194,7 @@ class CacheTag(object):
         self.expire_time = self.get_expire_time()
         if self._meta.versioning:
             self.version = self.get_version()
-        self.vary_on = [template.resolve_variable(var, self.context) for var in self.node.vary_on]
+        self.vary_on = [template.Variable(var).resolve(self.context) for var in self.node.vary_on]
 
     def get_expire_time(self):
         """
@@ -217,7 +216,7 @@ class CacheTag(object):
 
     def get_version(self):
         """
-        Return the stringified version passed the the templatetag.
+        Return the stringified version passed to the templatetag.
         """
         if not self.node.version:
             return None
@@ -441,7 +440,7 @@ class CacheTag(object):
         if cls not in CacheTag._templatetags_modules:
             try:
                 # find the library including the main templatetag of the current class
-                module = [name for name, lib in libraries().items()
+                module = [name for name, lib in get_template_libraries().items()
                           if CacheTag._templatetags[cls]['cache'] in lib.tags.values()][0]
             except Exception:
                 module = 'adv_cache'
