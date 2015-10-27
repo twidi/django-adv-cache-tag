@@ -45,9 +45,7 @@ With ``django-adv-cache-tag`` you can :
 Installation
 ------------
 
-``django-adv-cache-tag`` is available on PyPI:
-
-::
+``django-adv-cache-tag`` is available on PyPI::
 
     pip install django-adv-cache-tag
 
@@ -132,17 +130,13 @@ Description
 ^^^^^^^^^^^
 
 In the default django cache templatetag, the cache keys are like this
-one :
-
-::
+one ::
 
     :1:template.cache.your_fragment_name.64223ccf70bbb65a3a4aceac37e21016
 
 You may want to have more explicit cache keys, so with
 ``django-adv-cache-tag`` you can add a "primary key" that will be added
-between the fragment name and the hash :
-
-::
+between the fragment name and the hash ::
 
     :1:template.cache.your_fragment_name.your_pk.64223ccf70bbb65a3a4aceac37e21016
 
@@ -783,9 +777,7 @@ Running tests
 -------------
 
 If ``adv_cache_tag`` is in the ``INSTALLE_APPS`` of your project, simply
-run:
-
-::
+run::
 
     django-admin test adv_cache_tag
 
@@ -793,37 +785,27 @@ run:
 your installation)
 
 If you are in a fresh virtualenv to work on ``adv_cache_tag``, install
-the django version you want:
-
-::
+the django version you want::
 
     pip install django
 
 Then make the ``adv_cache_tag`` module available in your python path.
 For example, with ``virtualenv-wrapper``, considering you are at the
-root of the ``django-adv-cache-tag`` repository, simply do:
-
-::
+root of the ``django-adv-cache-tag`` repository, simply do::
 
     add2virtualenv .
 
-Or simply:
-
-::
+Or simply::
 
     pip install -e .
 
 Then to run the tests, this library provides a test project, so you can
-launch them this way:
-
-::
+launch them this way::
 
     DJANGO_SETTINGS_MODULE=adv_cache_tag.tests.testproject.settings django-admin.py test adv_cache_tag
 
 Or simply launch the ``runtests.sh`` script (it will run this exact
-command):
-
-::
+command)::
 
     ./runtests.sh
 
