@@ -554,5 +554,35 @@ We could have used `{% nocache %}` and `{% endnocache %}` instead of `{% RAW_xyz
 `django-adv-cache-tag` is published under the MIT License (see the LICENSE file)
 
 
+
+## Running tests
+
+If `adv_cache_tag` is in the `INSTALLE_APPS` of your project, simply run:
+
+    django-admin test adv_cache_tag
+
+(you may want to use ``django-admin`` or  ``./manage.py`` depending on your installation)
+
+If you are in a fresh virtualenv to work on ``adv_cache_tag``, install the django version you want:
+
+    pip install django
+
+Then make the ``adv_cache_tag`` module available in your python path. For example, with ``virtualenv-wrapper``, considering you are at the root of the ``django-adv-cache-tag`` repository, simply do:
+
+    add2virtualenv .
+
+Or simply:
+
+    pip install -e .
+
+Then to run the tests, this library provides a test project, so you can launch them this way:
+
+    DJANGO_SETTINGS_MODULE=adv_cache_tag.tests.testproject.settings django-admin.py test adv_cache_tag
+
+Or simply launch the ``runtests.sh`` script (it will run this exact command):
+
+    ./runtests.sh
+
+
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/twidi/django-adv-cache-tag/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 
