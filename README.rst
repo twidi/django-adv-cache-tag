@@ -1,3 +1,5 @@
+|PyPI Version| |Build Status|
+
 django-adv-cache-tag
 ====================
 
@@ -826,3 +828,9 @@ Support for Python 3 to come
 
 .. |Bitdeli Badge| image:: https://d2weczhvl823v0.cloudfront.net/twidi/django-adv-cache-tag/trend.png
    :target: https://bitdeli.com/free
+.. |PyPI Version| image:: https://img.shields.io/pypi/v/django-adv-cache-tag.png
+   :target: https://pypi.python.org/pypi/django-adv-cache-tag
+   :alt: PyPI Version
+.. |Build Status| image:: https://travis-ci.org/twidi/django-adv-cache-tag.png
+   :target: https://travis-ci.org/twidi/django-adv-cache-tag
+   :alt: Build Status on Travis CI
