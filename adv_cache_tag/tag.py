@@ -4,10 +4,6 @@ import hashlib
 import re
 import zlib
 
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
 
 from django import template
 from django.conf import settings
@@ -15,14 +11,7 @@ from django.template.base import libraries
 from django.utils.encoding import smart_str
 from django.utils.http import urlquote
 
-try:
-    from django.core.cache import caches
-except ImportError:
-    # Django < 1.7
-    from django.core.cache import get_cache
-else:
-    def get_cache(name):
-        return caches[name]
+from .compat import get_cache, pickle
 
 
 class CacheNodeMetaClass(type):
