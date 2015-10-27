@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'adv_cache_tag',
+    'adv_cache_tag.tests.testproject.adv_cache_test_app',
 ]
 
 MIDDLEWARE_CLASSES = [

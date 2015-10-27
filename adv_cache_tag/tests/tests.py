@@ -1,4 +1,5 @@
 import hashlib
+import time
 import zlib
 
 from datetime import datetime
@@ -124,10 +125,11 @@ class BasicTestCase(TestCase):
         args = hashlib.md5(key)
         return (prefix + '.%s.%s') % (fragment_name, args.hexdigest())
 
-    def render(self, template_text, context_dict=None):
+    def render(self, template_text, extend_context_dict=None):
         """Utils to render a template text with a context given as a dict."""
-        if context_dict is None:
-            context_dict = {'obj': self.obj}
+        context_dict = {'obj': self.obj}
+        if extend_context_dict:
+            context_dict.update(extend_context_dict)
         return template.Template(template_text).render(template.Context(context_dict))
 
     def assertStripEqual(self, first, second):
@@ -497,4 +499,50 @@ class BasicTestCase(TestCase):
         expected = "foobar  foo 2  !!"
         self.assertStripEqual(self.render(t), expected)
         self.assertEqual(self.get_name_called, 1)  # Still 1
-        self.assertEqual(self.get_foo_called, 2)  # One more call
+        self.assertEqual(self.get_foo_called, 2)  # One more call to the non-cached part
+
+    def test_new_class(self):
+        """Test a new class based on ``CacheTag``."""
+
+        expected = "foobar  foo 1  !!"
+
+        t = """
+            {% load adv_cache_test %}
+            {% cache_test 1 multiplicator test_cached_template obj.pk obj.updated_at %}
+                {{ obj.get_name }}
+                {% nocache_test %}
+                    {{ obj.get_foo }}
+                {% endnocache_test %}
+                !!
+            {% endcache_test %}
+        """
+
+        # Render a first time, should miss the cache
+        self.assertStripEqual(self.render(t, {'multiplicator': 10}), expected)
+        self.assertEqual(self.get_name_called, 1)
+        self.assertEqual(self.get_foo_called, 1)
+
+        # Now the rendered template should be in cache
+        key = self.get_template_key('test_cached_template',
+                                    vary_on=[self.obj['pk'], self.obj['updated_at']],
+                                    prefix='template.cache_test')
+        self.assertEqual(
+            key, 'template.cache_test.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
+
+        # It should be in the cache, with the RAW part
+        cache_expected = u"0.1:: foobar {%endRAW_947b3fc9bc5fb05cd2f03bb559ad06b2916b8add%} " \
+                         u"{{obj.get_foo}} {%RAW_947b3fc9bc5fb05cd2f03bb559ad06b2916b8add%} !! "
+        self.assertStripEqual(get_cache('default').get(key), cache_expected)
+
+        # We'll check that our multiplicator was really applied
+        cache = get_cache('default')
+        expire_at = cache._expire_info[cache.make_key(key, version=None)]
+        now = time.time()
+        # In more that one second (default expiry we set) and less than ten
+        self.assertTrue(now + 1 < expire_at < now + 10)
+
+        # Render a second time, should hit the cache but not for ``get_foo``
+        expected = "foobar  foo 2  !!"
+        self.assertStripEqual(self.render(t, {'multiplicator': 10}), expected)
+        self.assertEqual(self.get_name_called, 1)  # Still 1
+        self.assertEqual(self.get_foo_called, 2)  # One more call to the non-cached part

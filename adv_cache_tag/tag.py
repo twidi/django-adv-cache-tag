@@ -12,16 +12,59 @@ from django.utils.http import urlquote
 from .compat import get_cache, pickle, template
 
 
-class CacheNodeMetaClass(type):
+class Node(template.Node):
+    """
+    It's a normal template Node, with parameters defined in __init__ and rendering
+    This class can be extended in your own main cache class, by redefining a `Node`
+    class descending on this one.
+    """
+
+    def __init__(self, nodename, nodelist, expire_time, fragment_name, vary_on):
+        """
+        Define parameters to be used by the templatetag. The same as for
+        the default `cache` templatetag in django, except for `nodename`
+        which is the name used to call this templatetag ("cache" by default)
+
+        If versioning is activated, the last argument in `vary_on` is popped
+        and used for this purpose.
+
+        If the `include_pk` option is activated, the first argument in `vary_on`
+        will be used as the `pk` (but not removed from `vary_on`.
+        """
+        super(Node, self).__init__()
+        self.nodename = nodename
+        self.nodelist = nodelist
+        self.expire_time = template.Variable(expire_time)
+        self.fragment_name = fragment_name
+
+        self.version = None
+        if self._cachetag_class_._meta.versioning:
+            try:
+                self.version = template.Variable(vary_on.pop())
+            except Exception:
+                self.version = None
+
+        self.vary_on = vary_on
+
+    def render(self, context):
+        """
+        Render the template by calling the render method of the main
+        cache object.
+        """
+        return self._cachetag_class_(self, context).render()
+
+
+class CacheTagMetaClass(type):
     """
     Metaclass used by CacheTag to save the Meta entries in a _meta field, and
     save the current class in the Node one.
     """
 
     def __new__(mcs, name, bases, attrs):
-        klass = super(CacheNodeMetaClass, mcs).__new__(mcs, name, bases, attrs)
+        klass = super(CacheTagMetaClass, mcs).__new__(mcs, name, bases, attrs)
         klass._meta = klass.Meta()
-        klass.Node._cachetag_class_ = klass
+        # One `Node` class for each `CacheTag` class, with a link on the reverse side too
+        klass.Node = type('Node', (klass.Node, ), {'_cachetag_class_': klass})
         return klass
 
 
@@ -72,8 +115,10 @@ class CacheTag(object):
 
     # internal use only: keep reference to templatetags functions
     _templatetags = {}
-    # internal use only: name of the templatetags module to load for this class
-    _templatetags_module = None
+    # internal use only: name of the templatetags module to load for this class and subclasses
+    _templatetags_modules = {}
+
+    Node = Node
 
     class Meta:
         """
@@ -101,48 +146,7 @@ class CacheTag(object):
         internal_version = getattr(settings, 'ADV_CACHE_VERSION', '')
 
     # Use a metaclass to use the right class in the Node class, and assign Meta to _meta
-    __metaclass__ = CacheNodeMetaClass
-
-    class Node(template.Node):
-        """
-        It's a normal template Node, with parameters defined in __init__ and rendering
-        This class can be extended in your own main cache class, by redefining a `Node`
-        class descending on this one.
-        """
-
-        def __init__(self, nodename, nodelist, expire_time, fragment_name, vary_on):
-            """
-            Define parameters to be used by the templatetag. The same as for
-            the default `cache` templatetag in django, except for `nodename`
-            which is the name used to call this templatetag ("cache" by default)
-
-            If versioning is activated, the last argument in `vary_on` is popped
-            and used for this purpose.
-
-            If the `include_pk` option is activated, the first argument in `vary_on`
-            will be used as the `pk` (but not removed from `vary_on`.
-            """
-            super(CacheTag.Node, self).__init__()
-            self.nodename = nodename
-            self.nodelist = nodelist
-            self.expire_time = template.Variable(expire_time)
-            self.fragment_name = fragment_name
-
-            self.version = None
-            if self._cachetag_class_._meta.versioning:
-                try:
-                    self.version = template.Variable(vary_on.pop())
-                except Exception:
-                    self.version = None
-
-            self.vary_on = vary_on
-
-        def render(self, context):
-            """
-            Render the template by calling the render method of the main
-            cache object.
-            """
-            return self._cachetag_class_(self, context).render()
+    __metaclass__ = CacheTagMetaClass
 
     def __init__(self, node, context):
         """
@@ -433,15 +437,16 @@ class CacheTag(object):
         Return the templatetags module name for which the current class is used.
         It's used to render the nocache blocks by loading the correct module
         """
-        if not self.__class__._templatetags_module:
+        cls = self.__class__
+        if cls not in CacheTag._templatetags_modules:
             try:
                 # find the library including the main templatetag of the current class
-                module = [name for name, lib in libraries.items()
-                          if self._templatetags['cache'] in lib.tags.values()][0]
+                module = [name for name, lib in libraries().items()
+                          if CacheTag._templatetags[cls]['cache'] in lib.tags.values()][0]
             except Exception:
                 module = 'adv_cache'
-            self.__class__._templatetags_module = module
-        return self.__class__._templatetags_module
+            CacheTag._templatetags_modules[cls] = module
+        return CacheTag._templatetags_modules[cls]
 
     def render_nocache(self):
         """
@@ -485,6 +490,11 @@ class CacheTag(object):
             * nocache_nodename : the node to use for the nocache templatetag
         """
 
+        if cls in CacheTag._templatetags:
+            raise RuntimeError('The adv-cache-tag class %s is already registered' % cls)
+
+        CacheTag._templatetags[cls] = {}
+
         def templatetag_cache(parser, token):
             """
             Return a new Node object for the main cache templatetag
@@ -495,7 +505,7 @@ class CacheTag(object):
             return cls.Node(nodename, nodelist, *args)
 
         library_register.tag(nodename, templatetag_cache)
-        cls._templatetags['cache'] = templatetag_cache
+        CacheTag._templatetags[cls]['cache'] = templatetag_cache
 
         def templatetag_raw(parser, token):
             """
@@ -530,7 +540,7 @@ class CacheTag(object):
             parser.unclosed_block_tag(parse_until)
 
         library_register.tag(cls.RAW_TOKEN, templatetag_raw)
-        cls._templatetags['raw'] = templatetag_raw
+        CacheTag._templatetags[cls]['raw'] = templatetag_raw
 
         def templatetag_nocache(parser, token):
             """
@@ -556,4 +566,4 @@ class CacheTag(object):
             return node
 
         library_register.tag(nocache_nodename, templatetag_nocache)
-        cls._templatetags['nocache'] = templatetag_nocache
+        CacheTag._templatetags['nocache'] = templatetag_nocache
