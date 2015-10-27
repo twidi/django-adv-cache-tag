@@ -4,11 +4,12 @@ import zlib
 from datetime import datetime
 
 from django.conf import settings
+from django.utils.http import urlquote
 
 from adv_cache_tag.compat import get_cache, pickle, template
 from adv_cache_tag.tag import CacheTag
 
-from .compat import make_template_fragment_key, override_settings, SafeText, TestCase
+from .compat import override_settings, SafeText, TestCase
 
 
 # Force some settings to not depend on the external ones
@@ -114,6 +115,15 @@ class BasicTestCase(TestCase):
 
         super(BasicTestCase, cls).tearDownClass()
 
+    @staticmethod
+    def get_template_key(fragment_name, vary_on=None, prefix='template.cache'):
+        """Compose the cache key of a template."""
+        if vary_on is None:
+            vary_on = ()
+        key = u':'.join([urlquote(var) for var in vary_on])
+        args = hashlib.md5(key)
+        return (prefix + '.%s.%s') % (fragment_name, args.hexdigest())
+
     def render(self, template_text, context_dict=None):
         """Utils to render a template text with a context given as a dict."""
         if context_dict is None:
@@ -155,8 +165,8 @@ class BasicTestCase(TestCase):
         self.assertEqual(self.get_name_called, 1)
 
         # Now the rendered template should be in cache
-        key = make_template_fragment_key('test_cached_template',
-                                         vary_on=[self.obj['pk'], self.obj['updated_at']])
+        key = self.get_template_key('test_cached_template',
+                                    vary_on=[self.obj['pk'], self.obj['updated_at']])
         self.assertEqual(
             key, 'template.cache.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
 
@@ -183,8 +193,8 @@ class BasicTestCase(TestCase):
         self.assertEqual(self.get_name_called, 1)
 
         # Now the rendered template should be in cache
-        key = make_template_fragment_key('test_cached_template',
-                                         vary_on=[self.obj['pk'], self.obj['updated_at']])
+        key = self.get_template_key('test_cached_template',
+                                    vary_on=[self.obj['pk'], self.obj['updated_at']])
         self.assertEqual(
             key, 'template.cache.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
 
@@ -224,7 +234,7 @@ class BasicTestCase(TestCase):
         # Now the rendered template should be in cache
 
         # ``obj.updated_at`` is not in the key anymore, serving as the object version
-        key = make_template_fragment_key('test_cached_template', vary_on=[self.obj['pk']])
+        key = self.get_template_key('test_cached_template', vary_on=[self.obj['pk']])
         self.assertEqual(
             key, 'template.cache.test_cached_template.a1d0c6e83f027327d8461063f4ac58a6')
 
@@ -276,8 +286,8 @@ class BasicTestCase(TestCase):
         # Now the rendered template should be in cache
 
         # We add the pk as a part to the fragment name
-        key = make_template_fragment_key('test_cached_template.%s' % self.obj['pk'],
-                                         vary_on=[self.obj['pk'], self.obj['updated_at']])
+        key = self.get_template_key('test_cached_template.%s' % self.obj['pk'],
+                                    vary_on=[self.obj['pk'], self.obj['updated_at']])
         self.assertEqual(
             key, 'template.cache.test_cached_template.42.0cac9a03d5330dd78ddc9a0c16f01403')
 
@@ -312,8 +322,8 @@ class BasicTestCase(TestCase):
         self.assertEqual(self.get_name_called, 1)
 
         # Now the rendered template should be in cache
-        key = make_template_fragment_key('test_cached_template',
-                                         vary_on=[self.obj['pk'], self.obj['updated_at']])
+        key = self.get_template_key('test_cached_template',
+                                    vary_on=[self.obj['pk'], self.obj['updated_at']])
         self.assertEqual(
             key, 'template.cache.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
 
@@ -347,8 +357,8 @@ class BasicTestCase(TestCase):
         self.assertEqual(self.get_name_called, 1)
 
         # Now the rendered template should be in cache
-        key = make_template_fragment_key('test_cached_template',
-                                         vary_on=[self.obj['pk'], self.obj['updated_at']])
+        key = self.get_template_key('test_cached_template',
+                                    vary_on=[self.obj['pk'], self.obj['updated_at']])
         self.assertEqual(
             key, 'template.cache.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
 
@@ -387,8 +397,8 @@ class BasicTestCase(TestCase):
         self.assertEqual(self.get_name_called, 1)
 
         # Now the rendered template should be in cache
-        key = make_template_fragment_key('test_cached_template',
-                                         vary_on=[self.obj['pk'], self.obj['updated_at']])
+        key = self.get_template_key('test_cached_template',
+                                    vary_on=[self.obj['pk'], self.obj['updated_at']])
         self.assertEqual(
             key, 'template.cache.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
 
@@ -427,8 +437,8 @@ class BasicTestCase(TestCase):
         self.assertEqual(self.get_name_called, 1)
 
         # Now the rendered template should be in cache
-        key = make_template_fragment_key('test_cached_template',
-                                         vary_on=[self.obj['pk'], self.obj['updated_at']])
+        key = self.get_template_key('test_cached_template',
+                                    vary_on=[self.obj['pk'], self.obj['updated_at']])
         self.assertEqual(
             key, 'template.cache.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
 
@@ -473,8 +483,8 @@ class BasicTestCase(TestCase):
         self.assertEqual(self.get_foo_called, 1)
 
         # Now the rendered template should be in cache
-        key = make_template_fragment_key('test_cached_template',
-                                         vary_on=[self.obj['pk'], self.obj['updated_at']])
+        key = self.get_template_key('test_cached_template',
+                                    vary_on=[self.obj['pk'], self.obj['updated_at']])
         self.assertEqual(
             key, 'template.cache.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
 
