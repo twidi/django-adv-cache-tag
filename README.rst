@@ -812,8 +812,15 @@ command)::
 Supported versions
 ------------------
 
-This library is guaranteed to work with django 1.3 to 1.9, with python
-2.7
+============== ===============
+Django version Python versions
+============== ===============
+1.4, 1.5, 1.6  2.6, 2.7
+1.7, 1.8, 1.9  2.7
+============== ===============
+
+Support for Python 3 to come
+
 
 |Bitdeli Badge|
 
