@@ -514,7 +514,7 @@ arguments as the default django cache templatetag.
 If you want to add an argument, it's easy as the class provides a
 ``get_template_node_arguments`` method, which will work as for normal
 django templatetags, taking a list of tokens, and returning ones that
-will be passed to the real templatetag, a ``Node`` class inside the
+will be passed to the real templatetag, a ``Node`` class tied to the
 ``CacheTag``.
 
 Say you want to add a ``foo`` argument between the expire time and the
@@ -524,18 +524,23 @@ fragment name:
 
     from django import template
 
+    from adv_cache_tag.tag import CacheTag, Node
+
+    class MyNode(Node):
+        def __init__(self, nodename, nodelist, expire_time, foo, fragment_name, vary_on):
+            """ Save the foo variable in the node (not resolved yet) """
+            super(MyNode, self).__init__(self, nodename, nodelist, expire_time, fragment_name, vary_on)
+            self.foo = foo
+
+
     class MyCacheTag(CacheTag):
 
-        class Node(CacheTag.Node):
-            def __init__(self, nodename, nodelist, expire_time, foo, fragment_name, vary_on):
-                """ Save the foo variable in the node (not resolved yet) """
-                super(Node, self).__init__(self, nodename, nodelist, expire_time, fragment_name, vary_on)
-                self.foo = foo
+        Node = MyNode
 
         def prepare_params(self):
             """ Resolve the foo variable to it's real content """
-            super(CacheTag, self).prepare_params()
-            self.foo = template.resolve_variable(self.node.foo, self.context)
+            super(MyCacheTag, self).prepare_params()
+            self.foo = template.Variable(self.node.foo).resolve(self.context)
 
         @classmethod
         def get_template_node_arguments(cls, tokens):
@@ -825,7 +830,7 @@ command):
 Supported versions
 ------------------
 
-This library is guaranteed to work with django 1.3 to 1.8, with python
+This library is guaranteed to work with django 1.3 to 1.9, with python
 2.7
 
 |Bitdeli Badge|

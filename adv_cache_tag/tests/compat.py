@@ -65,20 +65,6 @@ except ImportError:
             for key in self.options:
                 new_value = getattr(settings, key, None)
 
-try:
-    from django.core.cache.utils import make_template_fragment_key
-except ImportError:
-    # Django < 1.6
-    import hashlib
-    from django.utils.http import urlquote
-
-    def make_template_fragment_key(fragment_name, vary_on=None):
-        if vary_on is None:
-            vary_on = ()
-        key = u':'.join([urlquote(var) for var in vary_on])
-        args = hashlib.md5(key)
-        return u'template.cache.%s.%s' % (fragment_name, args.hexdigest())
-
 if VERSION < (1, 7):
     from adv_cache_tag.compat import get_cache
 
