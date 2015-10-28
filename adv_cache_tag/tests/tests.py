@@ -10,7 +10,10 @@ from django.utils.http import urlquote
 from adv_cache_tag.compat import get_cache, pickle, template
 from adv_cache_tag.tag import CacheTag
 
-from .compat import override_settings, SafeText, TestCase
+from .compat import (
+    override_settings, SafeText, TestCase,
+    ValueErrorInRender, VariableDoesNotExistInRender,
+)
 
 
 # Force some settings to not depend on the external ones
@@ -38,6 +41,7 @@ from .compat import override_settings, SafeText, TestCase
     ADV_CACHE_INCLUDE_PK = False,
     ADV_CACHE_BACKEND = 'default',
     ADV_CACHE_VERSION = '',
+    ADV_CACHE_RESOLVE_NAME = False,
 
     # For django >= 1.8 (RemovedInDjango110Warning appears in 1.9)
     TEMPLATES = [
@@ -58,7 +62,7 @@ class BasicTestCase(TestCase):
         CacheTag._meta.compress_spaces = getattr(settings, 'ADV_CACHE_COMPRESS_SPACES', False)
         CacheTag._meta.include_pk = getattr(settings, 'ADV_CACHE_INCLUDE_PK', False)
         CacheTag._meta.cache_backend = getattr(settings, 'ADV_CACHE_BACKEND', 'default')
-        CacheTag._meta.internal_version = getattr(settings, 'ADV_CACHE_VERSION', '')
+        CacheTag._meta.resolve_fragment = getattr(settings, 'ADV_CACHE_RESOLVE_NAME', False)
 
         # generate a token for this site, based on the secret_key
         CacheTag.RAW_TOKEN = 'RAW_' + hashlib.sha1(
@@ -218,6 +222,91 @@ class BasicTestCase(TestCase):
         # Render a second time, should hit the cache
         self.assertStripEqual(self.render(t), expected)
         self.assertEqual(self.get_name_called, 1)  # Still 1
+
+    def test_quoted_fragment_name(self):
+        """Test quotes behaviour around the fragment name."""
+
+        t = """
+            {% load adv_cache %}
+            {% cache 1 "test_cached_template obj.pk obj.updated_at %}
+                {{ obj.get_name }}
+            {% endcache %}
+        """
+
+        with self.assertRaises(ValueErrorInRender) as raise_context:
+            self.render(t)
+        if not isinstance(raise_context.exception, ValueError):
+            self.assertIn('ValueError', str(raise_context.exception))
+        self.assertIn('incoherent', str(raise_context.exception))
+
+        t = """
+            {% load adv_cache %}
+            {% cache 1 test_cached_template" obj.pk obj.updated_at %}
+                {{ obj.get_name }}
+            {% endcache %}
+        """
+
+        with self.assertRaises(ValueErrorInRender) as raise_context:
+            self.render(t)
+        if not isinstance(raise_context.exception, ValueError):
+            self.assertIn('ValueError', str(raise_context.exception))
+        self.assertIn('incoherent', str(raise_context.exception))
+
+        t = """
+            {% load adv_cache %}
+            {% cache 1 'test_cached_template obj.pk obj.updated_at %}
+                {{ obj.get_name }}
+            {% endcache %}
+        """
+
+        with self.assertRaises(ValueErrorInRender) as raise_context:
+            self.render(t)
+        if not isinstance(raise_context.exception, ValueError):
+            self.assertIn('ValueError', str(raise_context.exception))
+        self.assertIn('incoherent', str(raise_context.exception))
+
+        t = """
+            {% load adv_cache %}
+            {% cache 1 test_cached_template" obj.pk obj.updated_at %}
+                {{ obj.get_name }}
+            {% endcache %}
+        """
+
+        with self.assertRaises(ValueErrorInRender) as raise_context:
+            self.render(t)
+        if not isinstance(raise_context.exception, ValueError):
+            self.assertIn('ValueError', str(raise_context.exception))
+        self.assertIn('incoherent', str(raise_context.exception))
+
+        t = """
+            {% load adv_cache %}
+            {% cache 1 "test_cached_template" obj.pk "foo" obj.updated_at %}
+                {{ obj.get_name }} foo
+            {% endcache %}
+        """
+        expected = "foobar foo"
+        self.assertStripEqual(self.render(t), expected)
+        key = self.get_template_key('test_cached_template',
+                                    vary_on=[self.obj['pk'], 'foo', self.obj['updated_at']])
+        self.assertEqual(  # no quotes arround `test_cached_template`
+            key, 'template.cache.test_cached_template.f2f294788f4c38512d3b544ce07befd0')
+        cache_expected = u"0.1::\n                foobar foo"
+        self.assertStripEqual(get_cache('default').get(key), cache_expected)
+
+        t = """
+            {% load adv_cache %}
+            {% cache 1 'test_cached_template' obj.pk "bar" obj.updated_at %}
+                {{ obj.get_name }} bar
+            {% endcache %}
+        """
+        expected = "foobar bar"
+        self.assertStripEqual(self.render(t), expected)
+        key = self.get_template_key('test_cached_template',
+                                    vary_on=[self.obj['pk'], 'bar', self.obj['updated_at']])
+        self.assertEqual(  # no quotes arround `test_cached_template`
+            key, 'template.cache.test_cached_template.8bccdefc91dc857fc02f6938bf69b816')
+        cache_expected = u"0.1::\n                foobar bar"
+        self.assertStripEqual(get_cache('default').get(key), cache_expected)
 
     @override_settings(
         ADV_CACHE_VERSIONING = True,
@@ -554,3 +643,94 @@ class BasicTestCase(TestCase):
         self.assertStripEqual(self.render(t, {'multiplicator': 10}), expected)
         self.assertEqual(self.get_name_called, 1)  # Still 1
         self.assertEqual(self.get_foo_called, 2)  # One more call to the non-cached part
+
+    @override_settings(
+        ADV_CACHE_RESOLVE_NAME = True,
+    )
+    def test_resolve_fragment_name(self):
+        """Test passing the fragment name as a variable."""
+
+        # Reset CacheTag config with default value (from the ``override_settings``)
+        self.reload_config()
+
+        expected = "foobar"
+
+        t = """
+            {% load adv_cache %}
+            {% cache 1 fragment_name obj.pk obj.updated_at %}
+                {{ obj.get_name }}
+            {% endcache %}
+        """
+
+        # Render a first time, should miss the cache
+        self.assertStripEqual(self.render(t, {'fragment_name': 'test_cached_template'}), expected)
+        self.assertEqual(self.get_name_called, 1)
+
+        # Now the rendered template should be in cache
+        key = self.get_template_key('test_cached_template',
+                                    vary_on=[self.obj['pk'], self.obj['updated_at']])
+        self.assertEqual(
+            key, 'template.cache.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
+
+        # But it should NOT be the exact content as adv_cache_tag adds a version
+        self.assertNotStripEqual(get_cache('default').get(key), expected)
+
+        # It should be the version from `adv_cache_tag`
+        cache_expected = u"0.1::\n                foobar"
+        self.assertStripEqual(get_cache('default').get(key), cache_expected)
+
+        # Render a second time, should hit the cache
+        self.assertStripEqual(self.render(t, {'fragment_name': 'test_cached_template'}), expected)
+        self.assertEqual(self.get_name_called, 1)  # Still 1
+
+        # Using an undefined variable should fail
+        t = """
+            {% load adv_cache %}
+            {% cache 1 undefined_fragment_name obj.pk obj.updated_at %}
+                {{ obj.get_name }}
+            {% endcache %}
+        """
+
+        with self.assertRaises(VariableDoesNotExistInRender) as raise_context:
+            self.render(t, {'fragment_name': 'test_cached_template'})
+        if not isinstance(raise_context.exception, template.VariableDoesNotExist):
+            self.assertIn('VariableDoesNotExist', str(raise_context.exception))
+
+    @override_settings(
+        ADV_CACHE_RESOLVE_NAME = True,
+    )
+    def test_passing_fragment_name_as_string(self):
+        """Test passing the fragment name as a variable."""
+
+        # Reset CacheTag config with default value (from the ``override_settings``)
+        self.reload_config()
+
+        expected = "foobar"
+
+        t = """
+            {% load adv_cache %}
+            {% cache 1 "test_cached_template" obj.pk obj.updated_at %}
+                {{ obj.get_name }}
+            {% endcache %}
+        """
+
+        # Render a first time, should miss the cache
+        self.assertStripEqual(self.render(t), expected)
+        self.assertEqual(self.get_name_called, 1)
+
+        # Now the rendered template should be in cache
+        key = self.get_template_key('test_cached_template',
+                                    vary_on=[self.obj['pk'], self.obj['updated_at']])
+        self.assertEqual(
+            key, 'template.cache.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
+
+        # But it should NOT be the exact content as adv_cache_tag adds a version
+        self.assertNotStripEqual(get_cache('default').get(key), expected)
+
+        # It should be the version from `adv_cache_tag`
+        cache_expected = u"0.1::\n                foobar"
+        self.assertStripEqual(get_cache('default').get(key), cache_expected)
+
+        # Render a second time, should hit the cache
+        self.assertStripEqual(self.render(t), expected)
+        self.assertEqual(self.get_name_called, 1)  # Still 1

@@ -43,6 +43,7 @@ With ``django-adv-cache-tag`` you can :
 -  easily define your own algorithm, as we provide a single class (with
    short methods) you can inherit from, and simply change options or
    whatever behavior you want, and define your own tags for them
+-  use a variable for the name of your cache fragment
 
 Installation
 ------------
@@ -289,6 +290,51 @@ Example
         {% endnocache %}
         <p>This is another cached part</p>
     {% endcache %}
+
+The fragment name
+~~~~~~~~~~~~~~~~~
+
+Description
+^^^^^^^^^^^
+
+The fragment name is the name to use as a base to create the cache key, and is defined just
+after the expiry time.
+
+The Django documentation states ``The name will be taken as is, do not use a variable``.
+
+In ``django-adv-cache-tag``, by setting ``ADV_CACHE_RESOLVE_NAME`` to ``True``, a fragment name
+that is not quoted will be resolved as a variable that should be in the context.
+
+Settings
+^^^^^^^^
+
+``ADV_CACHE_RESOLVE_NAME``, default to ``False``
+
+Example
+^^^^^^^
+
+With ``ADV_CACHE_RESOLVE_NAME`` set to ``True``, you can do this if you have a variable named
+``fragment_name`` in your context:
+
+.. code:: django
+
+    {% cache 0 fragment_name obj.pk obj.date_last_updated %}
+
+And if you want to pass a name, you have to surround it by quotes:
+
+.. code:: django
+
+    {% cache 0 "myobj_main_template" obj.pk obj.date_last_updated %}
+
+With ``ADV_CACHE_RESOLVE_NAME`` set to ``False``, the default, the name is always seen as a string,
+but if surrounded by quotes, they are removed.
+
+In the following example, you see double-quotes, but it would be the same with single quotes, or
+no quotes at all:
+
+.. code:: django
+
+    {% cache 0 "myobj_main_template" obj.pk obj.date_last_updated %}
 
 Extending the default cache tag
 -------------------------------

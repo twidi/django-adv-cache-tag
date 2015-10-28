@@ -34,7 +34,7 @@ class Node(template.Node):
         self.nodename = nodename
         self.nodelist = nodelist
         self.expire_time = template.Variable(expire_time)
-        self.fragment_name = fragment_name
+        self.fragment_name = template.Variable(fragment_name)
 
         self.version = None
         if self._cachetag_class_._meta.versioning:
@@ -80,6 +80,7 @@ class CacheTag(object):
         * ADV_CACHE_INCLUDE_PK
         * ADV_CACHE_BACKEND
         * ADV_CACHE_VERSION
+        * ADV_CACHE_RESOLVE_NAME
 
     Or inherit from this class and don't forget to register your tag :
 
@@ -144,6 +145,9 @@ class CacheTag(object):
         # Part of the INTERNAL_VERSION configurable via settings
         internal_version = getattr(settings, 'ADV_CACHE_VERSION', '')
 
+        # If the fragment name should be resolved or taken as is
+        resolve_fragment = getattr(settings, 'ADV_CACHE_RESOLVE_NAME', False)
+
     # Use a metaclass to use the right class in the Node class, and assign Meta to _meta
     __metaclass__ = CacheTagMetaClass
 
@@ -191,9 +195,24 @@ class CacheTag(object):
         """
         Prepare the parameters passed to the templatetag
         """
+        if self._meta.resolve_fragment:
+            self.fragment_name = self.node.fragment_name.resolve(self.context)
+        else:
+            self.fragment_name = str(self.node.fragment_name)
+            # Remove quotes that surround the name
+            for char in ('\'\"'):
+                if self.fragment_name.startswith(char) or self.fragment_name.endswith(char):
+                    if self.fragment_name.startswith(char) and self.fragment_name.endswith(char):
+                        self.fragment_name = self.fragment_name[1:-1]
+                        break
+                    else:
+                        raise ValueError('Number of quotes around the fragment name is incoherent')
+
         self.expire_time = self.get_expire_time()
+
         if self._meta.versioning:
             self.version = self.get_version()
+
         self.vary_on = [template.Variable(var).resolve(self.context) for var in self.node.vary_on]
 
     def get_expire_time(self):
@@ -263,7 +282,7 @@ class CacheTag(object):
         """
         cache_key_args = dict(
             nodename=self.node.nodename,
-            name=self.node.fragment_name,
+            name=self.fragment_name,
             hash=self.hash_args(),
         )
         if self._meta.include_pk:

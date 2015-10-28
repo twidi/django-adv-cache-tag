@@ -2,6 +2,8 @@ from django import VERSION
 from django.conf import settings
 from django.test import TestCase
 
+from adv_cache_tag.compat import template
+
 try:
     from django.test.utils import override_settings
 except ImportError:
@@ -83,3 +85,12 @@ try:
 except ImportError:
     # Django < 1.4
     from django.utils.safestring import SafeUnicode as SafeText
+
+
+if VERSION < (1, 4):
+    # In Django 1.3, original errors where catched and a ``TemplateSyntaxError`` was raised
+    VariableDoesNotExistInRender = template.TemplateSyntaxError
+    ValueErrorInRender = template.TemplateSyntaxError
+else:
+    VariableDoesNotExistInRender = template.VariableDoesNotExist
+    ValueErrorInRender = ValueError
