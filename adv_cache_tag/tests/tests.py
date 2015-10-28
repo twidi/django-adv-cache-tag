@@ -10,14 +10,14 @@ from django.utils.http import urlquote
 from adv_cache_tag.compat import get_cache, pickle, template
 from adv_cache_tag.tag import CacheTag
 
-from .compat import (
-    override_settings, SafeText, TestCase,
-    ValueErrorInRender, VariableDoesNotExistInRender,
-)
+from .compat import override_settings, SafeText, TestCase, ValueErrorInRender
 
 
 # Force some settings to not depend on the external ones
 @override_settings(
+
+    DEBUG = False,
+    TEMPLATE_DEBUG = False,
 
     # Force using memory cache
     CACHES = {
@@ -233,10 +233,8 @@ class BasicTestCase(TestCase):
             {% endcache %}
         """
 
-        with self.assertRaises(ValueErrorInRender) as raise_context:
+        with self.assertRaises(ValueError) as raise_context:
             self.render(t)
-        if not isinstance(raise_context.exception, ValueError):
-            self.assertIn('ValueError', str(raise_context.exception))
         self.assertIn('incoherent', str(raise_context.exception))
 
         t = """
@@ -246,10 +244,8 @@ class BasicTestCase(TestCase):
             {% endcache %}
         """
 
-        with self.assertRaises(ValueErrorInRender) as raise_context:
+        with self.assertRaises(ValueError) as raise_context:
             self.render(t)
-        if not isinstance(raise_context.exception, ValueError):
-            self.assertIn('ValueError', str(raise_context.exception))
         self.assertIn('incoherent', str(raise_context.exception))
 
         t = """
@@ -259,10 +255,8 @@ class BasicTestCase(TestCase):
             {% endcache %}
         """
 
-        with self.assertRaises(ValueErrorInRender) as raise_context:
+        with self.assertRaises(ValueError) as raise_context:
             self.render(t)
-        if not isinstance(raise_context.exception, ValueError):
-            self.assertIn('ValueError', str(raise_context.exception))
         self.assertIn('incoherent', str(raise_context.exception))
 
         t = """
@@ -272,10 +266,8 @@ class BasicTestCase(TestCase):
             {% endcache %}
         """
 
-        with self.assertRaises(ValueErrorInRender) as raise_context:
+        with self.assertRaises(ValueError) as raise_context:
             self.render(t)
-        if not isinstance(raise_context.exception, ValueError):
-            self.assertIn('ValueError', str(raise_context.exception))
         self.assertIn('incoherent', str(raise_context.exception))
 
         t = """
@@ -691,10 +683,9 @@ class BasicTestCase(TestCase):
             {% endcache %}
         """
 
-        with self.assertRaises(VariableDoesNotExistInRender) as raise_context:
+        with self.assertRaises(template.VariableDoesNotExist) as raise_context:
             self.render(t, {'fragment_name': 'test_cached_template'})
-        if not isinstance(raise_context.exception, template.VariableDoesNotExist):
-            self.assertIn('VariableDoesNotExist', str(raise_context.exception))
+        self.assertIn('undefined_fragment_name', str(raise_context.exception))
 
     @override_settings(
         ADV_CACHE_RESOLVE_NAME = True,
