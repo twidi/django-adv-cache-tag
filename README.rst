@@ -511,6 +511,15 @@ even more, you can override the ``cache_set`` and ``cache_get`` methods
 of the ``CacheTag`` class if you don't want to use the default ``set``
 and ``get`` methods of the cache backend object.
 
+Note that we also support the django way of changing the cache backend in the template-tag, using
+the ``using`` argument, to be set at the last parameter (without any space between `using` and the
+name of the cache backend).
+
+.. code:: django
+
+    {% cache 0 myobj_main_template obj.pk obj.date_last_updated using=foo %}
+
+
 Change the cache key
 ~~~~~~~~~~~~~~~~~~~~
 

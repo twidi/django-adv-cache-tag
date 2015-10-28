@@ -36,6 +36,10 @@ class Node(template.Node):
         self.expire_time = template.Variable(expire_time)
         self.fragment_name = template.Variable(fragment_name)
 
+        self.cache_backend = None
+        if vary_on and vary_on[-1].startswith('using='):
+            self.cache_backend = vary_on.pop()[len('using='):]
+
         self.version = None
         if self._cachetag_class_.options.versioning:
             try:
@@ -304,7 +308,7 @@ class CacheTag(object):
         every object with a `get` and a `set` method (or not, if `cache_get`
         and `cache_set` methods are overridden)
         """
-        return get_cache(self.options.cache_backend)
+        return get_cache(self.node.cache_backend or self.options.cache_backend)
 
     def cache_get(self):
         """

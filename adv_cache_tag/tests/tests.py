@@ -734,3 +734,38 @@ class BasicTestCase(TestCase):
         # Render a second time, should hit the cache
         self.assertStripEqual(self.render(t), expected)
         self.assertEqual(self.get_name_called, 1)  # Still 1
+
+    def test_using_argument(self):
+        """Test passing the cache backend to use with the `using=` arg to the templatetag."""
+
+        expected = "foobar"
+
+        t = """
+            {% load adv_cache %}
+            {% cache 1 test_cached_template obj.pk obj.updated_at using=foo %}
+                {{ obj.get_name }}
+            {% endcache %}
+        """
+
+        # Render a first time, should miss the cache
+        self.assertStripEqual(self.render(t), expected)
+        self.assertEqual(self.get_name_called, 1)
+
+        # Now the rendered template should be in cache
+        key = self.get_template_key('test_cached_template',
+                                    vary_on=[self.obj['pk'], self.obj['updated_at']])
+        self.assertEqual(
+            key, 'template.cache.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
+
+        # It should be in the cache
+        cache_expected = u"0.1::\n                foobar"
+
+        # But not in the ``default`` cache
+        self.assertIsNone(get_cache('default').get(key))
+
+        # But in the ``foo`` cache
+        self.assertStripEqual(get_cache('foo').get(key), cache_expected)
+
+        # Render a second time, should hit the cache
+        self.assertStripEqual(self.render(t), expected)
+        self.assertEqual(self.get_name_called, 1)  # Still 1
