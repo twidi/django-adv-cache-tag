@@ -769,3 +769,37 @@ class BasicTestCase(TestCase):
         # Render a second time, should hit the cache
         self.assertStripEqual(self.render(t), expected)
         self.assertEqual(self.get_name_called, 1)  # Still 1
+
+    @override_settings(
+        ADV_CACHE_COMPRESS_SPACES = True,
+    )
+    def test_loading_libraries_in_nocache(self):
+        """Test that needed libraries are loaded in the nocache block."""
+
+        # Reset CacheTag config with default value (from the ``override_settings``)
+        self.reload_config()
+
+        expected = "foobar FoOoO   FOO 1FOO 1 FoOoO  !!"
+
+        t = """
+            {% load adv_cache other_tags %}
+            {% cache 1 test_cached_template obj.pk obj.updated_at %}
+                {{ obj.get_name }} {% insert_foo %}
+                {% nocache %}
+                    {% load other_filters %}
+                    {{ obj.get_foo|double_upper }} {% insert_foo %}
+                {% endnocache %}
+                !!
+            {% endcache %}
+        """
+
+        # Render a first time, should miss the cache
+        self.assertStripEqual(self.render(t), expected)
+        self.assertEqual(self.get_name_called, 1)
+        self.assertEqual(self.get_foo_called, 1)
+
+        # Render a second time, should hit the cache but not for ``get_foo``
+        expected = "foobar FoOoO   FOO 2FOO 2 FoOoO  !!"
+        self.assertStripEqual(self.render(t), expected)
+        self.assertEqual(self.get_name_called, 1)  # Still 1
+        self.assertEqual(self.get_foo_called, 2)  # One more call to the non-cached part

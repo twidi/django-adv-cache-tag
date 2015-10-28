@@ -122,6 +122,7 @@ class CacheTag(object):
     # internal use only: name of the templatetags module to load for this class and subclasses
     _templatetags_modules = {}
 
+    options = None
     Node = Node
 
     class Meta:
@@ -204,7 +205,7 @@ class CacheTag(object):
         else:
             self.fragment_name = str(self.node.fragment_name)
             # Remove quotes that surround the name
-            for char in ('\'\"'):
+            for char in '\'\"':
                 if self.fragment_name.startswith(char) or self.fragment_name.endswith(char):
                     if self.fragment_name.startswith(char) and self.fragment_name.endswith(char):
                         self.fragment_name = self.fragment_name[1:-1]
@@ -456,20 +457,59 @@ class CacheTag(object):
 
         return self.render_nocache()
 
-    def get_templatetag_module(self):
+    @staticmethod
+    def get_all_tags_and_filters_by_function():
+        """
+        Return a dict with all the template tags (in the `tags` entry) and filters (in the
+        `filters` entry) that are available.
+        Both entries are a dict with the function as key, and a tuple with (library name, function
+        name) as value.
+        This is cached after the first call.
+        """
+
+        libraries = get_template_libraries()
+
+        force = False
+
+        # We'll force the update of the cache if new libraries where added
+        if hasattr(CacheTag.get_all_tags_and_filters_by_function, '_len_libraries'):
+            if len(libraries) != CacheTag.get_all_tags_and_filters_by_function._len_libraries:
+                force = True
+
+        if force or not hasattr(CacheTag.get_all_tags_and_filters_by_function, '_cache'):
+            CacheTag.get_all_tags_and_filters_by_function._len_libraries = len(libraries)
+            available_tags = {}
+            available_filters = {}
+
+            for lib_name, lib in libraries.items():
+                available_tags.update(
+                    (function, (lib_name, tag_name))
+                    for tag_name, function
+                    in lib.tags.items()
+                )
+                available_filters.update(
+                    (function, (lib_name, filter_name))
+                    for filter_name, function
+                    in lib.filters.items()
+                )
+
+            CacheTag.get_all_tags_and_filters_by_function._cache = {
+                'tags': available_tags,
+                'filters': available_filters
+            }
+
+        return CacheTag.get_all_tags_and_filters_by_function._cache
+
+    @classmethod
+    def get_templatetag_module(cls):
         """
         Return the templatetags module name for which the current class is used.
         It's used to render the nocache blocks by loading the correct module
         """
-        cls = self.__class__
         if cls not in CacheTag._templatetags_modules:
-            try:
-                # find the library including the main templatetag of the current class
-                module = [name for name, lib in get_template_libraries().items()
-                          if CacheTag._templatetags[cls]['cache'] in lib.tags.values()][0]
-            except Exception:
-                module = 'adv_cache'
-            CacheTag._templatetags_modules[cls] = module
+            # find the library including the main templatetag of the current class
+            all_tags = cls.get_all_tags_and_filters_by_function()['tags']
+            CacheTag._templatetags_modules[cls] = all_tags[CacheTag._templatetags[cls]['cache']][0]
         return CacheTag._templatetags_modules[cls]
 
     def render_nocache(self):
@@ -585,8 +625,43 @@ class CacheTag(object):
                 {% RAW... %}bar{% endRAW... %}foo{% RAW... %}baz{% endRAW... %}
             And the html within `RAW` and `endRAW` will not be parsed, as wanted
             """
+
+            # We'll load in the no-cache part all template tags and filters loaded in the main
+            # template, to be able to use it when the no-cache will be rendered
+
+            all_tags_and_filters = cls.get_all_tags_and_filters_by_function()
+            available_tags = all_tags_and_filters['tags']
+            available_filters = all_tags_and_filters['filters']
+
+            needed = {}
+            current_module = cls.get_templatetag_module()
+
+            for function in parser.tags.values():
+                if function in available_tags:
+                    lib, name = available_tags[function]
+                    if lib == current_module:
+                        continue
+                    needed.setdefault(lib, set()).add(name)
+
+            for function in parser.filters.values():
+                if function in available_filters:
+                    lib, name = available_filters[function]
+                    if lib == current_module:
+                        continue
+                    needed.setdefault(lib, set()).add(name)
+
+            load_string = ''.join(
+                '%sload %s from %s%s' % (
+                    template.BLOCK_TAG_START,
+                    ' '.join(names),
+                    lib,
+                    template.BLOCK_TAG_END,
+                )
+                for lib, names in needed.items()
+            )
+
             node = templatetag_raw(parser, token)
-            node.s = cls.RAW_TOKEN_END + node.s + cls.RAW_TOKEN_START
+            node.s = cls.RAW_TOKEN_END + load_string + node.s + cls.RAW_TOKEN_START
             return node
 
         library_register.tag(nocache_nodename, templatetag_nocache)
