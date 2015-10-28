@@ -419,9 +419,15 @@ class CacheTag(object):
 
         self.content = None
 
-        try:
-            if not self.regenerate:
+        if not self.regenerate:
+            try:
                 self.content = self.cache_get()
+            except Exception:
+                if settings.TEMPLATE_DEBUG:
+                    raise
+                logger.exception('Error when getting the cached template fragment')
+
+        try:
 
             assert self.content
 

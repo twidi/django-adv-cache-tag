@@ -44,3 +44,10 @@ class FailingCacheSetCacheTag(CacheTag):
         raise ValueError('boom set')
 
 FailingCacheSetCacheTag.register(register, 'cache_set_fail')
+
+
+class FailingCacheGetCacheTag(CacheTag):
+    def cache_get(self):
+        raise ValueError('boom get')
+
+FailingCacheGetCacheTag.register(register, 'cache_get_fail')
