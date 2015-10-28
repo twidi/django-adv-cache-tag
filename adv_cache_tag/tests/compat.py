@@ -89,8 +89,6 @@ except ImportError:
 
 if VERSION < (1, 4):
     # In Django 1.3, original errors where catched and a ``TemplateSyntaxError`` was raised
-    VariableDoesNotExistInRender = template.TemplateSyntaxError
     ValueErrorInRender = template.TemplateSyntaxError
 else:
-    VariableDoesNotExistInRender = template.VariableDoesNotExist
     ValueErrorInRender = ValueError

@@ -2,6 +2,8 @@ from django import template
 
 from adv_cache_tag.tag import CacheTag, Node
 
+register = template.Library()
+
 
 class TestNode(Node):
     def __init__(self, nodename, nodelist, expire_time, multiplicator, fragment_name, vary_on):
@@ -34,7 +36,18 @@ class TestCacheTag(CacheTag):
         expiry_time = super(TestCacheTag, self).get_expire_time()
         return self.multiplicator * expiry_time
 
-
-register = template.Library()
-
 TestCacheTag.register(register, 'cache_test', 'nocache_test')
+
+
+class FailingCacheSetCacheTag(CacheTag):
+    def cache_set(self, to_cache):
+        raise ValueError('boom set')
+
+FailingCacheSetCacheTag.register(register, 'cache_set_fail')
+
+
+class FailingCacheGetCacheTag(CacheTag):
+    def cache_get(self):
+        raise ValueError('boom get')
+
+FailingCacheGetCacheTag.register(register, 'cache_get_fail')
