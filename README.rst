@@ -119,6 +119,9 @@ So we set a ``expire_time`` of ``0``, to always keep the template
 cached, because we now we won't have many copies (old ones and current
 one) of it.
 
+The value to set to have no expiry may depend of your cache backend (it's not always `0`).
+
+
 .. code:: django
 
     {% load adv_cache %}
