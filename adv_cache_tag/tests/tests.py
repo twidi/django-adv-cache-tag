@@ -794,3 +794,36 @@ class BasicTestCase(TestCase):
         self.assertStripEqual(self.render(t), expected)
         self.assertEqual(self.get_name_called, 1)  # Still 1
         self.assertEqual(self.get_foo_called, 2)  # One more call to the non-cached part
+
+    def test_failure_when_setting_cache(self):
+        """Test that the template is correctly rendered even if the cache cannot be filled."""
+
+        expected = "foobar"
+
+        t = """
+            {% load adv_cache_test %}
+            {% cache_set_fail 1 test_cached_template obj.pk obj.updated_at %}
+                {{ obj.get_name }}
+            {% endcache_set_fail %}
+        """
+
+        # Render a first time, should still be rendered
+        self.assertStripEqual(self.render(t), expected)
+
+        # Now the rendered template should NOT be in cache
+        key = self.get_template_key('test_cached_template',
+                                    vary_on=[self.obj['pk'], self.obj['updated_at']],
+                                    prefix='template.cache_set_fail')
+        self.assertEqual(
+            key, 'template.cache_set_fail.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
+
+        # But not in the ``default`` cache
+        self.assertIsNone(get_cache('default').get(key))
+
+        # It should raise if ``TEMPLATE_DEBUG`` is ``True``
+        with override_settings(TEMPLATE_DEBUG=True):
+            with self.assertRaises(ValueErrorInRender) as raise_context:
+                self.render(t)
+            if not isinstance(raise_context.exception, ValueError):
+                self.assertIn('ValueError', str(raise_context.exception))
+            self.assertIn('boom set', str(raise_context.exception))

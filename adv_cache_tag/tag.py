@@ -1,6 +1,7 @@
 # django-adv-cache-tag / Copyright Stephane "Twidi" Angel <s.angel@twidi.com> / MIT License
 
 import hashlib
+import logging
 import re
 import zlib
 
@@ -9,6 +10,8 @@ from django.utils.encoding import smart_str
 from django.utils.http import urlquote
 
 from .compat import get_cache, get_template_libraries, pickle, template
+
+logger = logging.getLogger('adv_cache_tag')
 
 
 class Node(template.Node):
@@ -397,7 +400,12 @@ class CacheTag(object):
 
         to_cache = self.join_content_version(to_cache)
 
-        self.cache_set(to_cache)
+        try:
+            self.cache_set(to_cache)
+        except Exception:
+            if settings.TEMPLATE_DEBUG:
+                raise
+            logger.exception('Error when saving the cached template fragment')
 
     def load_content(self):
         """
@@ -450,6 +458,7 @@ class CacheTag(object):
         except Exception:
             if settings.TEMPLATE_DEBUG:
                 raise
+            logger.exception('Error when rendering template fragment')
             return ''
 
         if self.partial or self.RAW_TOKEN_START not in self.content:
