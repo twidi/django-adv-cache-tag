@@ -37,7 +37,7 @@ class Node(template.Node):
         self.fragment_name = template.Variable(fragment_name)
 
         self.version = None
-        if self._cachetag_class_._meta.versioning:
+        if self._cachetag_class_.options.versioning:
             try:
                 self.version = template.Variable(vary_on.pop())
             except Exception:
@@ -55,13 +55,13 @@ class Node(template.Node):
 
 class CacheTagMetaClass(type):
     """
-    Metaclass used by CacheTag to save the Meta entries in a _meta field, and
+    Metaclass used by CacheTag to save the Meta entries in a options field, and
     save the current class in the Node one.
     """
 
     def __new__(mcs, name, bases, attrs):
         klass = super(CacheTagMetaClass, mcs).__new__(mcs, name, bases, attrs)
-        klass._meta = klass.Meta()
+        klass.options = klass._meta = klass.Meta()
         # One `Node` class for each `CacheTag` class, with a link on the reverse side too
         klass.Node = type('Node', (klass.Node, ), {'_cachetag_class_': klass})
         return klass
@@ -122,7 +122,7 @@ class CacheTag(object):
 
     class Meta:
         """
-        Options of this class. Accessible via cls._meta or self._meta.
+        Options of this class. Accessible via cls.options or self.options.
         To force (and/or add) options in your own class, simply redefine a
         `Meta` class in your own main cache class with updated/add values
         """
@@ -148,7 +148,7 @@ class CacheTag(object):
         # If the fragment name should be resolved or taken as is
         resolve_fragment = getattr(settings, 'ADV_CACHE_RESOLVE_NAME', False)
 
-    # Use a metaclass to use the right class in the Node class, and assign Meta to _meta
+    # Use a metaclass to use the right class in the Node class, and assign Meta to options
     __metaclass__ = CacheTagMetaClass
 
     def __init__(self, node, context):
@@ -178,9 +178,9 @@ class CacheTag(object):
         self.content_version = None
 
         # Final "INTERNAL_VERSION"
-        if self._meta.internal_version:
+        if self.options.internal_version:
             self.INTERNAL_VERSION = '%s|%s' % (self.__class__.INTERNAL_VERSION,
-                                               self._meta.internal_version)
+                                               self.options.internal_version)
 
         # prepare all parameters passed to the templatetag
         self.expire_time = None
@@ -195,7 +195,7 @@ class CacheTag(object):
         """
         Prepare the parameters passed to the templatetag
         """
-        if self._meta.resolve_fragment:
+        if self.options.resolve_fragment:
             self.fragment_name = self.node.fragment_name.resolve(self.context)
         else:
             self.fragment_name = str(self.node.fragment_name)
@@ -210,7 +210,7 @@ class CacheTag(object):
 
         self.expire_time = self.get_expire_time()
 
-        if self._meta.versioning:
+        if self.options.versioning:
             self.version = self.get_version()
 
         self.vary_on = [template.Variable(var).resolve(self.context) for var in self.node.vary_on]
@@ -271,7 +271,7 @@ class CacheTag(object):
             * %(pk)s : the return of the `get_pk` method, passed only if `include_pk` is True
             * %(hash)s : the return of the `hash_args` method
         """
-        if self._meta.include_pk:
+        if self.options.include_pk:
             return 'template.%(nodename)s.%(name)s.%(pk)s.%(hash)s'
         else:
             return 'template.%(nodename)s.%(name)s.%(hash)s'
@@ -285,7 +285,7 @@ class CacheTag(object):
             name=self.fragment_name,
             hash=self.hash_args(),
         )
-        if self._meta.include_pk:
+        if self.options.include_pk:
             cache_key_args['pk'] = self.get_pk()
 
         return cache_key_args
@@ -304,7 +304,7 @@ class CacheTag(object):
         every object with a `get` and a `set` method (or not, if `cache_get`
         and `cache_set` methods are overridden)
         """
-        return get_cache(self._meta.cache_backend)
+        return get_cache(self.options.cache_backend)
 
     def cache_get(self):
         """
@@ -327,7 +327,7 @@ class CacheTag(object):
         "compress_spaces" options are on)
         """
         parts = ['%s' % self.INTERNAL_VERSION]
-        if self._meta.versioning:
+        if self.options.versioning:
             parts.append('%s' % self.version)
 
         return self.VERSION_SEPARATOR.join(parts) + self.VERSION_SEPARATOR + to_cache
@@ -343,14 +343,14 @@ class CacheTag(object):
         """
         try:
             nb_parts = 2
-            if self._meta.versioning:
+            if self.options.versioning:
                 nb_parts = 3
 
             parts = self.content.split(self.VERSION_SEPARATOR, nb_parts - 1)
             assert len(parts) == nb_parts
 
             self.content_internal_version = '%s' % parts[0]
-            if self._meta.versioning:
+            if self.options.versioning:
                 self.content_version = '%s' % parts[1]
 
             self.content = parts[-1]
@@ -382,10 +382,10 @@ class CacheTag(object):
         """
         self.render_node()
 
-        if self._meta.compress_spaces:
+        if self.options.compress_spaces:
             self.content = self.RE_SPACELESS.sub(' ', self.content)
 
-        if self._meta.compress:
+        if self.options.compress:
             to_cache = self.encode_content()
         else:
             to_cache = self.content
@@ -417,12 +417,12 @@ class CacheTag(object):
             assert self.content
 
             if self.content_internal_version != self.INTERNAL_VERSION or (
-                    self._meta.versioning and self.content_version != self.version):
+                    self.options.versioning and self.content_version != self.version):
                 self.content = None
 
             assert self.content
 
-            if self._meta.compress:
+            if self.options.compress:
                 self.decode_content()
 
         except Exception:

@@ -57,12 +57,12 @@ class BasicTestCase(TestCase):
     @classmethod
     def reload_config(cls):
         """Resest the ``CacheTag`` configuration from current settings"""
-        CacheTag._meta.versioning = getattr(settings, 'ADV_CACHE_VERSIONING', False)
-        CacheTag._meta.compress = getattr(settings, 'ADV_CACHE_COMPRESS', False)
-        CacheTag._meta.compress_spaces = getattr(settings, 'ADV_CACHE_COMPRESS_SPACES', False)
-        CacheTag._meta.include_pk = getattr(settings, 'ADV_CACHE_INCLUDE_PK', False)
-        CacheTag._meta.cache_backend = getattr(settings, 'ADV_CACHE_BACKEND', 'default')
-        CacheTag._meta.resolve_fragment = getattr(settings, 'ADV_CACHE_RESOLVE_NAME', False)
+        CacheTag.options.versioning = getattr(settings, 'ADV_CACHE_VERSIONING', False)
+        CacheTag.options.compress = getattr(settings, 'ADV_CACHE_COMPRESS', False)
+        CacheTag.options.compress_spaces = getattr(settings, 'ADV_CACHE_COMPRESS_SPACES', False)
+        CacheTag.options.include_pk = getattr(settings, 'ADV_CACHE_INCLUDE_PK', False)
+        CacheTag.options.cache_backend = getattr(settings, 'ADV_CACHE_BACKEND', 'default')
+        CacheTag.options.resolve_fragment = getattr(settings, 'ADV_CACHE_RESOLVE_NAME', False)
 
         # generate a token for this site, based on the secret_key
         CacheTag.RAW_TOKEN = 'RAW_' + hashlib.sha1(
