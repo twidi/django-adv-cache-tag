@@ -874,12 +874,12 @@ command)::
 Supported versions
 ------------------
 
-============== ===============
-Django version Python versions
-============== ===============
+============== ==============
+Django version Python version
+============== ==============
 1.4, 1.5, 1.6  2.6, 2.7
 1.7, 1.8, 1.9  2.7
-============== ===============
+============== ==============
 
 Support for Python 3 to come in version 1.0. Then, the support for Python 2 will be dropped.
 
