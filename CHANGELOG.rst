@@ -1,6 +1,10 @@
 Changelog
 =========
 
+Release *v0.2.1* - ``2015-10-29``
+---------------------------------
+* Mark release 0.2.1 as only compatible with python 2
+* Mark status as `Development Status :: 5 - Production/Stable`
 
 Release *v0.2.0* - ``2015-10-29``
 ---------------------------------
