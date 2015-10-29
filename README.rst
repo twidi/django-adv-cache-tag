@@ -50,9 +50,18 @@ Installation
 
 ``django-adv-cache-tag`` is available on PyPI::
 
-    pip install django-adv-cache-tag==0.2.1
+    pip install django-adv-cache-tag
 
-You must specify the version as the last one available (``>=1.0``) only support python 3.
+Starting at version ``1.0``, we only support python 3.
+
+**If you upgrade from version < 1, note that the internal version number has changed, so all
+cache will be reset.**
+
+If you want python 2 support, you must install by passing the version ::
+
+    pip install 'django-adv-cache-tag<=1.0'
+
+(and check the relevant documentation for the correct tag on the github repository)
 
 Or you can find it on Github:
 https://github.com/twidi/django-adv-cache-tag
@@ -877,11 +886,13 @@ Supported versions
 ============== ==============
 Django version Python version
 ============== ==============
-1.4, 1.5, 1.6  2.6, 2.7
-1.7, 1.8, 1.9  2.7
+1.5, 1.6       3.2, 3.3
+1.7            3.2, 3.3, 3.4
+1.8            3.2, 3.3, 3.4, 3.5
+1.9            3.4, 3.5
 ============== ==============
 
-Support for Python 3 to come in version 1.0. Then, the support for Python 2 will be dropped.
+Support for Python 2 is dropped since version 1 of ``django-adv-cache-tag``
 
 
 |Bitdeli Badge|

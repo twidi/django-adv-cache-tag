@@ -9,9 +9,9 @@ from setuptools import setup, find_packages
 
 import adv_cache_tag
 
-if sys.version_info >= (3,):
-    sys.stderr.write('Fatal error: django-adv-cache-tag %s only works with python 2. '
-                     'Use version >=1.0 for python 3.\n' % adv_cache_tag.__version__)
+if sys.version_info < (3,):
+    sys.stderr.write('Fatal error: django-adv-cache-tag %s only works with python 3. '
+                     'Use version <1.0 for python 2.\n' % adv_cache_tag.__version__)
     sys.exit(1)
 
 long_description = codecs.open('README.rst', "r", "utf-8").read()
@@ -41,12 +41,13 @@ setup(
         "Operating System :: OS Independent",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 2 :: Only",
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.6",
-        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3 :: Only",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.2",
+        "Programming Language :: Python :: 3.3",
+        "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: 3.5",
         "Framework :: Django",
-        "Framework :: Django :: 1.4",
         "Framework :: Django :: 1.5",
         "Framework :: Django :: 1.6",
         "Framework :: Django :: 1.7",

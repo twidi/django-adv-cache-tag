@@ -1,16 +1,21 @@
 import hashlib
+import pickle
 import time
 import zlib
 
 from datetime import datetime
 
 from django.conf import settings
+from django.utils.encoding import force_bytes
+from django.utils.safestring import SafeText
+
+from django.test.utils import override_settings
 from django.utils.http import urlquote
 
-from adv_cache_tag.compat import get_cache, pickle, template
+from adv_cache_tag.compat import get_cache, template
 from adv_cache_tag.tag import CacheTag
 
-from .compat import override_settings, SafeText, TestCase, ValueErrorInRender
+from .compat import TestCase
 
 
 # Force some settings to not depend on the external ones
@@ -66,9 +71,9 @@ class BasicTestCase(TestCase):
 
         # generate a token for this site, based on the secret_key
         CacheTag.RAW_TOKEN = 'RAW_' + hashlib.sha1(
-            'RAW_TOKEN_SALT1' + hashlib.sha1(
-                'RAW_TOKEN_SALT2' + settings.SECRET_KEY
-            ).digest()
+            b'RAW_TOKEN_SALT1' + force_bytes(hashlib.sha1(
+                b'RAW_TOKEN_SALT2' + force_bytes(settings.SECRET_KEY)
+            ).hexdigest())
         ).hexdigest()
 
         # tokens to use around the already parsed parts of the cached template
@@ -133,8 +138,8 @@ class BasicTestCase(TestCase):
         """Compose the cache key of a template."""
         if vary_on is None:
             vary_on = ()
-        key = u':'.join([urlquote(var) for var in vary_on])
-        args = hashlib.md5(key)
+        key = ':'.join([urlquote(var) for var in vary_on])
+        args = hashlib.md5(force_bytes(key))
         return (prefix + '.%s.%s') % (fragment_name, args.hexdigest())
 
     def render(self, template_text, extend_context_dict=None):
@@ -216,7 +221,7 @@ class BasicTestCase(TestCase):
         self.assertNotStripEqual(get_cache('default').get(key), expected)
 
         # It should be the version from `adv_cache_tag`
-        cache_expected = u"0.1::\n                foobar"
+        cache_expected = b"1::\n                foobar"
         self.assertStripEqual(get_cache('default').get(key), cache_expected)
 
         # Render a second time, should hit the cache
@@ -282,7 +287,7 @@ class BasicTestCase(TestCase):
                                     vary_on=[self.obj['pk'], 'foo', self.obj['updated_at']])
         self.assertEqual(  # no quotes arround `test_cached_template`
             key, 'template.cache.test_cached_template.f2f294788f4c38512d3b544ce07befd0')
-        cache_expected = u"0.1::\n                foobar foo"
+        cache_expected = b"1::\n                foobar foo"
         self.assertStripEqual(get_cache('default').get(key), cache_expected)
 
         t = """
@@ -297,7 +302,7 @@ class BasicTestCase(TestCase):
                                     vary_on=[self.obj['pk'], 'bar', self.obj['updated_at']])
         self.assertEqual(  # no quotes arround `test_cached_template`
             key, 'template.cache.test_cached_template.8bccdefc91dc857fc02f6938bf69b816')
-        cache_expected = u"0.1::\n                foobar bar"
+        cache_expected = b"1::\n                foobar bar"
         self.assertStripEqual(get_cache('default').get(key), cache_expected)
 
     @override_settings(
@@ -330,7 +335,7 @@ class BasicTestCase(TestCase):
             key, 'template.cache.test_cached_template.a1d0c6e83f027327d8461063f4ac58a6')
 
         # It should be in the cache, with the ``updated_at`` in the version
-        cache_expected = u"0.1::2015-10-27 00:00:00::\n                foobar"
+        cache_expected = b"1::2015-10-27 00:00:00::\n                foobar"
         self.assertStripEqual(get_cache('default').get(key), cache_expected)
 
         # Render a second time, should hit the cache
@@ -345,7 +350,7 @@ class BasicTestCase(TestCase):
         self.assertEqual(self.get_name_called, 2)  # One more
 
         # It should be in the cache, with the new ``updated_at`` in the version
-        cache_expected = u"0.1::2015-10-28 00:00:00::\n                foobar"
+        cache_expected = b"1::2015-10-28 00:00:00::\n                foobar"
         self.assertStripEqual(get_cache('default').get(key), cache_expected)
 
         # Render a second time, should hit the cache
@@ -383,7 +388,7 @@ class BasicTestCase(TestCase):
             key, 'template.cache.test_cached_template.42.0cac9a03d5330dd78ddc9a0c16f01403')
 
         # It should be in the cache
-        cache_expected = u"0.1::\n                foobar"
+        cache_expected = b"1::\n                foobar"
         self.assertStripEqual(get_cache('default').get(key), cache_expected)
 
         # Render a second time, should hit the cache
@@ -419,7 +424,7 @@ class BasicTestCase(TestCase):
             key, 'template.cache.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
 
         # It should be in the cache, with only one space instead of many white spaces
-        cache_expected = u"0.1:: foobar "
+        cache_expected = b"1:: foobar "
         # Test with ``assertEqual``, not ``assertStripEqual``
         self.assertEqual(get_cache('default').get(key), cache_expected)
 
@@ -455,8 +460,8 @@ class BasicTestCase(TestCase):
 
         # It should be in the cache, compressed
         # We use ``SafeText`` as django does in templates
-        compressed = zlib.compress(pickle.dumps(SafeText(u"  foobar  ")))
-        cache_expected = '0.1::' + compressed
+        compressed = zlib.compress(pickle.dumps(SafeText("  foobar  ")))
+        cache_expected = b'1::' + compressed
         # Test with ``assertEqual``, not ``assertStripEqual``
         self.assertEqual(get_cache('default').get(key), cache_expected)
 
@@ -496,8 +501,8 @@ class BasicTestCase(TestCase):
         # It should be in the cache, compressed
         # We DON'T use ``SafeText`` as in ``test_compression`` because with was converted back
         # to a real string when removing spaces
-        compressed = zlib.compress(pickle.dumps(u" foobar "))
-        cache_expected = '0.1::' + compressed
+        compressed = zlib.compress(pickle.dumps(" foobar "))
+        cache_expected = b'1::' + compressed
         # Test with ``assertEqual``, not ``assertStripEqual``
         self.assertEqual(get_cache('default').get(key), cache_expected)
 
@@ -534,7 +539,7 @@ class BasicTestCase(TestCase):
             key, 'template.cache.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
 
         # It should be in the cache
-        cache_expected = u"0.1::\n                foobar"
+        cache_expected = b"1::\n                foobar"
 
         # But not in the ``default`` cache
         self.assertIsNone(get_cache('default').get(key))
@@ -580,8 +585,8 @@ class BasicTestCase(TestCase):
             key, 'template.cache.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
 
         # It should be in the cache, with the RAW part
-        cache_expected = u"0.1:: foobar {%endRAW_947b3fc9bc5fb05cd2f03bb559ad06b2916b8add%} " \
-                         u"{{obj.get_foo}} {%RAW_947b3fc9bc5fb05cd2f03bb559ad06b2916b8add%} !! "
+        cache_expected = b"1:: foobar {%endRAW_38a11088962625eb8c913e791931e2bc2e3c7228%} " \
+                         b"{{obj.get_foo}} {%RAW_38a11088962625eb8c913e791931e2bc2e3c7228%} !! "
         self.assertStripEqual(get_cache('default').get(key), cache_expected)
 
         # Render a second time, should hit the cache but not for ``get_foo``
@@ -619,8 +624,8 @@ class BasicTestCase(TestCase):
             key, 'template.cache_test.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
 
         # It should be in the cache, with the RAW part
-        cache_expected = u"0.1:: foobar {%endRAW_947b3fc9bc5fb05cd2f03bb559ad06b2916b8add%} " \
-                         u"{{obj.get_foo}} {%RAW_947b3fc9bc5fb05cd2f03bb559ad06b2916b8add%} !! "
+        cache_expected = b"1:: foobar {%endRAW_38a11088962625eb8c913e791931e2bc2e3c7228%} " \
+                         b"{{obj.get_foo}} {%RAW_38a11088962625eb8c913e791931e2bc2e3c7228%} !! "
         self.assertStripEqual(get_cache('default').get(key), cache_expected)
 
         # We'll check that our multiplicator was really applied
@@ -668,7 +673,7 @@ class BasicTestCase(TestCase):
         self.assertNotStripEqual(get_cache('default').get(key), expected)
 
         # It should be the version from `adv_cache_tag`
-        cache_expected = u"0.1::\n                foobar"
+        cache_expected = b"1::\n                foobar"
         self.assertStripEqual(get_cache('default').get(key), cache_expected)
 
         # Render a second time, should hit the cache
@@ -719,7 +724,7 @@ class BasicTestCase(TestCase):
         self.assertNotStripEqual(get_cache('default').get(key), expected)
 
         # It should be the version from `adv_cache_tag`
-        cache_expected = u"0.1::\n                foobar"
+        cache_expected = b"1::\n                foobar"
         self.assertStripEqual(get_cache('default').get(key), cache_expected)
 
         # Render a second time, should hit the cache
@@ -749,7 +754,7 @@ class BasicTestCase(TestCase):
             key, 'template.cache.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
 
         # It should be in the cache
-        cache_expected = u"0.1::\n                foobar"
+        cache_expected = b"1::\n                foobar"
 
         # But not in the ``default`` cache
         self.assertIsNone(get_cache('default').get(key))
@@ -822,10 +827,8 @@ class BasicTestCase(TestCase):
 
         # It should raise if ``TEMPLATE_DEBUG`` is ``True``
         with override_settings(TEMPLATE_DEBUG=True):
-            with self.assertRaises(ValueErrorInRender) as raise_context:
+            with self.assertRaises(ValueError) as raise_context:
                 self.render(t)
-            if not isinstance(raise_context.exception, ValueError):
-                self.assertIn('ValueError', str(raise_context.exception))
             self.assertIn('boom set', str(raise_context.exception))
 
     def test_failure_when_getting_cache(self):
@@ -851,13 +854,11 @@ class BasicTestCase(TestCase):
             key, 'template.cache_get_fail.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
 
         # It should be in the cache
-        cache_expected = u"0.1::\n                foobar"
+        cache_expected = b"1::\n                foobar"
         self.assertStripEqual(get_cache('default').get(key), cache_expected)
 
         # It should raise if ``TEMPLATE_DEBUG`` is ``True``
         with override_settings(TEMPLATE_DEBUG=True):
-            with self.assertRaises(ValueErrorInRender) as raise_context:
+            with self.assertRaises(ValueError) as raise_context:
                 self.render(t)
-            if not isinstance(raise_context.exception, ValueError):
-                self.assertIn('ValueError', str(raise_context.exception))
             self.assertIn('boom get', str(raise_context.exception))

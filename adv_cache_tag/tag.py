@@ -2,14 +2,15 @@
 
 import hashlib
 import logging
+import pickle
 import re
 import zlib
 
 from django.conf import settings
-from django.utils.encoding import smart_str
+from django.utils.encoding import smart_str, force_bytes
 from django.utils.http import urlquote
 
-from .compat import get_cache, get_template_libraries, pickle, template
+from .compat import get_cache, get_template_libraries, template
 
 logger = logging.getLogger('adv_cache_tag')
 
@@ -74,7 +75,7 @@ class CacheTagMetaClass(type):
         return klass
 
 
-class CacheTag(object):
+class CacheTag(object, metaclass=CacheTagMetaClass):
     """
     The main class of `django-adv-cache-tag` which does all the work.
 
@@ -102,7 +103,7 @@ class CacheTag(object):
     """
 
     # Will change if the algorithm changes
-    INTERNAL_VERSION = '0.1'
+    INTERNAL_VERSION = '1'
     # Used to separate internal version, template version, and the content
     VERSION_SEPARATOR = '::'
 
@@ -111,9 +112,9 @@ class CacheTag(object):
 
     # generate a token for this site, based on the secret_key
     RAW_TOKEN = 'RAW_' + hashlib.sha1(
-        'RAW_TOKEN_SALT1' + hashlib.sha1(
-            'RAW_TOKEN_SALT2' + settings.SECRET_KEY
-        ).digest()
+        b'RAW_TOKEN_SALT1' + force_bytes(hashlib.sha1(
+            b'RAW_TOKEN_SALT2' + force_bytes(settings.SECRET_KEY)
+        ).hexdigest())
     ).hexdigest()
 
     # tokens to use around the already parsed parts of the cached template
@@ -157,7 +158,6 @@ class CacheTag(object):
         resolve_fragment = getattr(settings, 'ADV_CACHE_RESOLVE_NAME', False)
 
     # Use a metaclass to use the right class in the Node class, and assign Meta to options
-    __metaclass__ = CacheTagMetaClass
 
     def __init__(self, node, context):
         """
@@ -187,8 +187,12 @@ class CacheTag(object):
 
         # Final "INTERNAL_VERSION"
         if self.options.internal_version:
-            self.INTERNAL_VERSION = '%s|%s' % (self.__class__.INTERNAL_VERSION,
+            self.INTERNAL_VERSION = b'%s|%s' % (self.__class__.INTERNAL_VERSION,
                                                self.options.internal_version)
+        else:
+            self.INTERNAL_VERSION = force_bytes(self.__class__.INTERNAL_VERSION)
+
+        self.VERSION_SEPARATOR = force_bytes(self.__class__.VERSION_SEPARATOR)
 
         # prepare all parameters passed to the templatetag
         self.expire_time = None
@@ -219,7 +223,7 @@ class CacheTag(object):
         self.expire_time = self.get_expire_time()
 
         if self.options.versioning:
-            self.version = self.get_version()
+            self.version = force_bytes(self.get_version())
 
         self.vary_on = [template.Variable(var).resolve(self.context) for var in self.node.vary_on]
 
@@ -260,7 +264,7 @@ class CacheTag(object):
         Take all the arguments passed after the fragment name and return a
         hashed version which will be used in the cache key
         """
-        return hashlib.md5(u':'.join([urlquote(var) for var in self.vary_on])).hexdigest()
+        return hashlib.md5(force_bytes(':'.join([urlquote(var) for var in self.vary_on]))).hexdigest()
 
     def get_pk(self):
         """
@@ -334,11 +338,12 @@ class CacheTag(object):
         This method is called after the encoding (if "compress" or
         "compress_spaces" options are on)
         """
-        parts = ['%s' % self.INTERNAL_VERSION]
+        parts = [self.INTERNAL_VERSION]
         if self.options.versioning:
-            parts.append('%s' % self.version)
+            parts.append(force_bytes(self.version))
+        parts.append(force_bytes(to_cache))
 
-        return self.VERSION_SEPARATOR.join(parts) + self.VERSION_SEPARATOR + to_cache
+        return self.VERSION_SEPARATOR.join(parts)
 
     def split_content_version(self):
         """
@@ -357,9 +362,9 @@ class CacheTag(object):
             parts = self.content.split(self.VERSION_SEPARATOR, nb_parts - 1)
             assert len(parts) == nb_parts
 
-            self.content_internal_version = '%s' % parts[0]
+            self.content_internal_version = parts[0]
             if self.options.versioning:
-                self.content_version = '%s' % parts[1]
+                self.content_version = parts[1]
 
             self.content = parts[-1]
         except Exception:
@@ -446,6 +451,9 @@ class CacheTag(object):
 
         except Exception:
             self.create_content()
+
+        self.content = smart_str(self.content)
+
 
     def render(self):
         """
@@ -555,7 +563,7 @@ class CacheTag(object):
         """
         if len(tokens) < 3:
             raise template.TemplateSyntaxError(
-                u"'%r' tag requires at least 2 arguments." % tokens[0])
+                "'%r' tag requires at least 2 arguments." % tokens[0])
         return tokens[1], tokens[2], tokens[3:]
 
     @classmethod
@@ -613,9 +621,9 @@ class CacheTag(object):
             while parser.tokens:
                 token = parser.next_token()
                 if token.token_type == template.TOKEN_BLOCK and token.contents == parse_until:
-                    return template.TextNode(u''.join(text))
+                    return template.TextNode(''.join(text))
                 start, end = tag_mapping[token.token_type]
-                text.append(u'%s%s%s' % (start, token.contents, end))
+                text.append('%s%s%s' % (start, token.contents, end))
             parser.unclosed_block_tag(parse_until)
 
         library_register.tag(cls.RAW_TOKEN, templatetag_raw)
