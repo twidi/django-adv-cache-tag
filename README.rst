@@ -879,7 +879,7 @@ Django version Python versions
 1.7, 1.8, 1.9  2.7
 ============== ===============
 
-Support for Python 3 to come
+Support for Python 3 to come in version 1.0. Then, the support for Python 2 will be dropped.
 
 
 |Bitdeli Badge|
