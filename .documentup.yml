@@ -4,3 +4,7 @@
     "twidi"
   ]
 }
+name: Django advanced cache templatetag
+twitter: twidi
+travis: true
+issues: true
