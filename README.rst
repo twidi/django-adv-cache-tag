@@ -50,7 +50,9 @@ Installation
 
 ``django-adv-cache-tag`` is available on PyPI::
 
-    pip install django-adv-cache-tag
+    pip install django-adv-cache-tag==0.2.1
+
+You must specify the version as the last one available (``>=1.0``) only support python 3.
 
 Or you can find it on Github:
 https://github.com/twidi/django-adv-cache-tag
