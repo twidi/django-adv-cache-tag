@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Release *v1.0* - ``2015-10-29``
+-------------------------------
+* WARNING: internal version changed, all existing cached fragment will be reset
+* Remove support for python 2
+* Remove support for django < 1.5
+
 Release *v0.2.1* - ``2015-10-29``
 ---------------------------------
 * Mark release 0.2.1 as only compatible with python 2

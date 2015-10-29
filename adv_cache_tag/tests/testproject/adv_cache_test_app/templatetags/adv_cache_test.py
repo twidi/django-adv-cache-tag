@@ -23,7 +23,7 @@ class TestCacheTag(CacheTag):
         """ Check validity of tokens and return them as ready to be passed to the Node class """
         if len(tokens) < 4:
             raise template.TemplateSyntaxError(
-                u"'%r' tag requires at least 3 arguments." % tokens[0])
+                "'%r' tag requires at least 3 arguments." % tokens[0])
         return tokens[1], tokens[2], tokens[3], tokens[4:]
 
     def prepare_params(self):

@@ -1,7 +1,3 @@
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
 
 try:
     from django.core.cache import caches
