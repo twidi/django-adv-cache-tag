@@ -1,6 +1,10 @@
 Changelog
 =========
 
+Release *v0.3.0* - ``2015-12-14``
+---------------------------------
+* Add support for `None` as a cache timeout value
+
 Release *v0.2.1* - ``2015-10-29``
 ---------------------------------
 * Mark release 0.2.1 as only compatible with python 2
