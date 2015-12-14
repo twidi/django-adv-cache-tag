@@ -59,13 +59,13 @@ number has changed, so all cache will be reset.**
 
 If you want python 2 support, you must install by passing the version :
 
-    pip install 'django-adv-cache-tag<=1.0'
-
-(and check the relevant documentation for the correct tag on the github
-repository)
+    pip install 'django-adv-cache-tag<1.0'
 
 Or you can find it on Github:
 <https://github.com/twidi/django-adv-cache-tag>
+
+(for python2 version:
+<https://github.com/twidi/django-adv-cache-tag/tree/python2>)
 
 When installed, just add `adv_cache_tag` to your `INSTALLED_APPS` in the
 `settings.py` file of your django project.
