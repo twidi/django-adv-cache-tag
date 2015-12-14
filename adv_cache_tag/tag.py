@@ -226,18 +226,29 @@ class CacheTag(object):
     def get_expire_time(self):
         """
         Return the expire time passed to the templatetag.
-        Must be an integer.
+        Must be None or an integer.
         """
         try:
             expire_time = self.node.expire_time.resolve(self.context)
         except template.VariableDoesNotExist:
-            raise template.TemplateSyntaxError('"%s" tag got an unknown variable: %r' %
-                                               (self.node.nodename, self.node.expire_time.var))
+            if self.node.expire_time.var == 'None':
+                # `None` was not valid before django 1.5
+                expire_time = None
+            else:
+                raise template.TemplateSyntaxError('"%s" tag got an unknown variable: %r' %
+                                                   (self.node.nodename, self.node.expire_time.var))
         try:
-            expire_time = int(expire_time)
+            if expire_time is not None:
+                expire_time = str(expire_time)
+                if not expire_time.isdigit():
+                    raise TypeError
+                expire_time = int(expire_time)
         except (ValueError, TypeError):
-            raise template.TemplateSyntaxError('"%s" tag got a non-integer timeout value: %r' %
-                                               (self.node.nodename, expire_time))
+            raise template.TemplateSyntaxError(
+                '"%s" tag got a non-integer (or None) timeout value: %r' % (
+                    self.node.nodename, expire_time
+                )
+            )
 
         return expire_time
 
