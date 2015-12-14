@@ -1,5 +1,5 @@
 """An advanced template tag for caching in django: versioning, compress, partial caching, easy inheritance"""
-VERSION = (0, 2, 1)
+VERSION = (0, 3, 0)
 
 __author__ = 'Stephane "Twidi" Angel'
 __contact__ = "s.angel@twidid.com"
