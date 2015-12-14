@@ -1,11 +1,19 @@
 Changelog
 =========
 
+Release *v1.1.0* - ``2015-12-14``
+---------------------------------
+* Add support for `None` as a cache timeout value
+
 Release *v1.0* - ``2015-10-29``
 -------------------------------
 * WARNING: internal version changed, all existing cached fragment will be reset
 * Remove support for python 2
 * Remove support for django < 1.5
+
+Release *v0.3.0* - ``2015-12-14``
+---------------------------------
+* Add support for `None` as a cache timeout value (python 2 version)
 
 Release *v0.2.1* - ``2015-10-29``
 ---------------------------------
