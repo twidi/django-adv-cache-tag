@@ -228,6 +228,44 @@ class BasicTestCase(TestCase):
         self.assertStripEqual(self.render(t), expected)
         self.assertEqual(self.get_name_called, 1)  # Still 1
 
+    def test_timeout_value(self):
+        "Test that timeout value is ``None`` or an integer."""
+
+        ok_values = ('0', '1', '9999', '"0"', '"1"', '"9999"', 'None')
+        ko_values = ('-1', '-9999', '"-1"', '"-9999"', '"foo"', '""', '12.3', '"12.3"')
+
+        t = """
+            {%% load adv_cache %%}
+            {%% cache %s test_cached_template obj.pk obj.updated_at %%}
+                {{ obj.get_name }}
+            {%% endcache %%}
+        """
+
+        for value in ok_values:
+            def test_value(value):
+                self.render(t % value)
+
+            if hasattr(self, 'subTest'):
+                with self.subTest(value=value):
+                    test_value(value)
+            else:
+                test_value(value)
+
+        for value in ko_values:
+            def test_value(value):
+                with self.assertRaises(template.TemplateSyntaxError) as raise_context:
+                    self.render(t % value)
+                self.assertIn(
+                    'tag got a non-integer (or None) timeout value',
+                    str(raise_context.exception)
+                )
+
+            if hasattr(self, 'subTest'):
+                with self.subTest(value=value):
+                    test_value(value)
+            else:
+                test_value(value)
+
     def test_quoted_fragment_name(self):
         """Test quotes behaviour around the fragment name."""
 
