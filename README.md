@@ -823,9 +823,9 @@ the `django-adv-cache-tag` repository, simply do:
 
     add2virtualenv .
 
-Or simply:
+Or simply, to install all at once:
 
-    pip install -e .
+    pip install -e .[dev]
 
 Then to run the tests, this library provides a test project, so you can
 launch them this way:
@@ -840,13 +840,9 @@ command):
 Supported versions
 ------------------
 
-  Django version   | Python version
-  ---------------- | ----------------
-  1.4, 1.5, 1.6    | 2.6, 2.7
-  1.7, 1.8, 1.9    | 2.7
+  Django version   Python version   Library version
+  ---------------- ---------------- -----------------
+  1.4 to 1.11      2.7              0.4
+  1.11, 2.0        3.4, 3.5, 3.6    1.1.1
 
-Support for Python 3 to come in version 1.0. Then, the support for
-Python 2 will be dropped.
 
-[![Bitdeli
-Badge](https://d2weczhvl823v0.cloudfront.net/twidi/django-adv-cache-tag/trend.png)](https://bitdeli.com/free)
