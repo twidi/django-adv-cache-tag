@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Release *v0.4.0* - ``2018-02-01``
+---------------------------------
+* Official support for Django up to version 1.11.x
+* Remove support for Python 2.6
+
 Release *v0.3.0* - ``2015-12-14``
 ---------------------------------
 * Add support for `None` as a cache timeout value

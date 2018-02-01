@@ -842,7 +842,7 @@ Supported versions
 
   Django version   Python version   Library version
   ---------------- ---------------- -----------------
-  1.4 to 1.11      2.7              0.3.1
+  1.4 to 1.11      2.7              0.4
   1.11, 2.0        3.4, 3.5, 3.6    1.1.1
 
 
