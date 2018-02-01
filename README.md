@@ -23,9 +23,9 @@ templatetag included in django, so it's very easy to use this new one.
 
 With `django-adv-cache-tag` you can :
 
--   add a version number (int, string, date or whatever, it will be
-    stringified) to your templatetag : the version will be compared to
-    the cached one, and the exact same cache key will be used for the
+-   add a version number (int, string, date or whatever, it will
+    be stringified) to your templatetag : the version will be compared
+    to the cached one, and the exact same cache key will be used for the
     new cached template, avoiding keeping old unused keys in your cache,
     allowing you to cache forever.
 -   avoid to be afraid of an incompatible update in our algorithm,
@@ -122,12 +122,12 @@ it.
 The value to set to have no expiry may depend of your cache backend
 (it's not always 0).
 
-~~~~ {.sourceCode .django}
+```django
 {% load adv_cache %}
 {% cache 0 myobj_main_template obj.pk obj.date_last_updated %}
   {{ obj }}
 {% endcache %}
-~~~~
+```
 
 ### Primary key
 
@@ -168,9 +168,9 @@ generate the cache key hash.
 A common use of `django-adv-cache-tag` is to only use a primary key and
 a version:
 
-~~~~ {.sourceCode .django}
+```django
 {% cache 0 myobj_main_template obj.pk obj.date_last_updated %}
-~~~~
+```
 
 ### Compression
 
@@ -268,7 +268,7 @@ There is no settings for this feature, which is automatically activated.
 
 #### Example
 
-~~~~ {.sourceCode .django}
+```django
 {% cache 0 myobj_main_template obj.pk obj.date_last_updated %}
     <p>This is the cached part of the template for {{ obj }}, evaluated at {% now "r" %}.</p>
     {% nocache %}
@@ -276,7 +276,7 @@ There is no settings for this feature, which is automatically activated.
     {% endnocache %}
     <p>This is another cached part</p>
 {% endcache %}
-~~~~
+```
 
 ### The fragment name
 
@@ -301,15 +301,15 @@ variable that should be in the context.
 With `ADV_CACHE_RESOLVE_NAME` set to `True`, you can do this if you have
 a variable named `fragment_name` in your context:
 
-~~~~ {.sourceCode .django}
+```django
 {% cache 0 fragment_name obj.pk obj.date_last_updated %}
-~~~~
+```
 
 And if you want to pass a name, you have to surround it by quotes:
 
-~~~~ {.sourceCode .django}
+```django
 {% cache 0 "myobj_main_template" obj.pk obj.date_last_updated %}
-~~~~
+```
 
 With `ADV_CACHE_RESOLVE_NAME` set to `False`, the default, the name is
 always seen as a string, but if surrounded by quotes, they are removed.
@@ -317,9 +317,9 @@ always seen as a string, but if surrounded by quotes, they are removed.
 In the following example, you see double-quotes, but it would be the
 same with single quotes, or no quotes at all:
 
-~~~~ {.sourceCode .django}
+```django
 {% cache 0 "myobj_main_template" obj.pk obj.date_last_updated %}
-~~~~
+```
 
 Extending the default cache tag
 -------------------------------
@@ -347,7 +347,7 @@ activated :
 Create a new templatetag file (`myapp/templatetags/my_cache_tags.py`)
 with this:
 
-~~~~ {.sourceCode .python}
+```python
 from adv_cache_tag.tag import CacheTag
 
 class VersionedCacheTag(CacheTag):
@@ -358,17 +358,17 @@ from django import template
 register = template.Library()
 
 VersionedCacheTag.register(register, 'ver_cache')
-~~~~
+```
 
 With these simple lines, you now have a new templatetag to use when you
 want versioning:
 
-~~~~ {.sourceCode .django}
+```django
 {% load my_cache_tags %}
 {% ver_cache 0 myobj_main_template obj.pk obj.date_last_updated %}
     obj
 {% endver_cache %}
-~~~~
+```
 
 As you see, just replace `{% load adv_cache %}` (or the django default
 `{% load cache %}`) by `{% load my_cache_tags %}` (your templatetag
@@ -378,24 +378,24 @@ module), and the `{% cache %}` templatetag by your new defined one,
 if you want a new one. For this, just add a parameter to the `register`
 method:
 
-~~~~ {.sourceCode .python}
+```python
 MyCacheTag.register(register, 'ver_cache', 'ver_nocache')
-~~~~
+```
 
-~~~~ {.sourceCode .django}
+```django
 {% ver_cache ... %}
     cached
     {% ver_nocache %}not cached{% endver_nocache %}
 {% endver_cache %}
-~~~~
+```
 
 Note that you can keep the name `cache` for your tag if you know that
 you will not load in your template another templatetag module providing
 a `cache` tag. To do so, the simplest way is:
 
-~~~~ {.sourceCode .python}
+```python
 MyCacheTag.register(register)  # 'cache' and 'nocache' are the default values
-~~~~
+```
 
 All the `django-adv-cache-tag` settings have a matching variable in the
 `Meta` class, so you can override one or many of them in your own
@@ -412,14 +412,14 @@ your own version as the last argument to the templatetag. But if you
 want to use the power of the versioning system of
 `django-adv-cache-tag`, it can be too verbose:
 
-~~~~ {.sourceCode .django}
+```django
 {% load adv_cache %}
 {% with template_version=obj.date_last_updated|stringformat:"s"|add:"v1" %}
     {% cache 0 myobj_main_template obj.pk template_version %}
     ...
     {% endcache %}
 {% endwith %}
-~~~~
+```
 
 `django-adv-cache-tag` provides a way to do this easily, with the
 `ADV_CACHE_VERSION` setting. But by updating it, **all** cached versions
@@ -427,22 +427,22 @@ will be invalidated, not only those you updated.
 
 To do this, simply create your own tag with a specific internal version:
 
-~~~~ {.sourceCode .python}
+```python
 class MyCacheTag(CacheTag):
     class Meta(CacheTag.Meta):
        internal_version = "v1"
 
 MyCacheTag.register('my_cache')
-~~~~
+```
 
 And then in your template, you can simply do
 
-~~~~ {.sourceCode .django}
+```django
 {% load my_cache_tags %}
 {% my_cache 0 myobj_main_template obj.pk obj.date_last_updated %}
 ...
 {% endmy_cache %}
-~~~~
+```
 
 Each time you update the content of your template and want invalidation,
 simply change the `internal_version` in your `MyCacheTag` class (or you
@@ -452,26 +452,26 @@ can use a settings for this).
 
 If you want to change the cache backend for one templatetag, it's easy:
 
-~~~~ {.sourceCode .python}
+```python
 class MyCacheTag(CacheTag):
     class Meta:
         cache_backend = 'templates'
-~~~~
+```
 
 But you can also to this by overriding a method:
 
-~~~~ {.sourceCode .python}
+```python
 from django.core.cache import get_cache
 
 class MyCacheTag(CacheTag):
     def get_cache_object(self):
         return get_cache('templates')
-~~~~
+```
 
 And if you want a cache backend for old objects, and another, faster,
 for recent ones:
 
-~~~~ {.sourceCode .python}
+```python
 from django.core.cache import get_cache
 
 class MyCacheTag(CacheTag):
@@ -483,7 +483,7 @@ class MyCacheTag(CacheTag):
         if self.get_pk() < 1000:
             cache_backend = 'slow_templates'
         return get_cache(cache_backend)
-~~~~
+```
 
 The value returned by the `get_cache_object` should be a cache backend
 object, but as we only use the `set` and `get` methods on this object,
@@ -497,9 +497,9 @@ in the template-tag, using the `using` argument, to be set at the last
 parameter (without any space between using and the name of the cache
 backend).
 
-~~~~ {.sourceCode .django}
+```django
 {% cache 0 myobj_main_template obj.pk obj.date_last_updated using=foo %}
-~~~~
+```
 
 ### Change the cache key
 
@@ -529,12 +529,12 @@ If you want to remove the "template." part at the start of the cache key
 (useless if you have a cache backend dedicated to template caching), you
 can do this:
 
-~~~~ {.sourceCode .python}
+```python
 class MyCacheTag(CacheTag):
     def get_base_cache_key(self):
         cache_key = super(MyCacheTag, self).get_base_cache_key()
         return cache_key[len('template:'):]  # or [9:]
-~~~~
+```
 
 ### Add an argument to the templatetag
 
@@ -550,7 +550,7 @@ will be passed to the real templatetag, a `Node` class tied to the
 Say you want to add a `foo` argument between the expire time and the
 fragment name:
 
-~~~~ {.sourceCode .python}
+```python
 from django import template
 
 from adv_cache_tag.tag import CacheTag, Node
@@ -577,7 +577,7 @@ class MyCacheTag(CacheTag):
         if len(tokens) < 4:
             raise template.TemplateSyntaxError(u"'%r' tag requires at least 3 arguments." % tokens[0])
         return (tokens[1], tokens[2], tokens[3], tokens[4:])
-~~~~
+```
 
 ### Prepare caching of templates
 
@@ -598,7 +598,7 @@ As we are not in a request, we don't have the `Request` object here, so
 context processors are not working, we must create a context object that
 will be used to render the template, with all needed variables.
 
-~~~~ {.sourceCode .python}
+```python
 from django.template import loader, Context
 
 class MyModel(models.Model):
@@ -624,7 +624,7 @@ class MyModel(models.Model):
         })
 
         loader.get_template(template).render(context)
-~~~~
+```
 
 ### Load data from database before rendering
 
@@ -648,7 +648,7 @@ the object from the database and adding it to the context.
 
 #### View
 
-~~~~ {.sourceCode .python}
+```python
 def my_view(request):
     objects = [
         dict(
@@ -659,30 +659,30 @@ def my_view(request):
             redis.zrevrange('my_objects', 0, 19, withscores=True)
     ]
     return render(request, "my_results.html", dict(objects=objects))
-~~~~
+```
 
 #### Template "my\_results.html"
 
-~~~~ {.sourceCode .django}
+```django
 {% for obj in objects %}
     {% include "my_result.html" %}
 {% endfor %}
-~~~~
+```
 
 #### Template "my\_result.html"
 
-~~~~ {.sourceCode .django}
+```django
 {% load my_cache_tags %}
 {% my_cache 0 myobj_main_template obj.pk obj.date_last_updated %}
     {{ obj }}
 {% endmy_cache %}
-~~~~
+```
 
 #### Templatetag
 
 In `myapp/templatetags/my_cache_tags`
 
-~~~~ {.sourceCode .python}
+```python
 from my_app.models import MyModel
 
 class MyCacheTag(CacheTag):
@@ -699,7 +699,7 @@ class MyCacheTag(CacheTag):
         super(MyCacheTag, self).create_content()
 
 MyCacheTag.register('my_cache')
-~~~~
+```
 
 Careful with this, it generates as database requests as objects to be
 loaded.
@@ -741,7 +741,7 @@ Here is a quick overview on how things work in `django-adv-cache-tag`
 
 Your template :
 
-~~~~ {.sourceCode .django}
+```django
 {% load adv_cache %}
 {% cache ... %}
     foo
@@ -750,22 +750,22 @@ Your template :
     {% endnocache %}
     baz
 {% endcache %}
-~~~~
+```
 
 Cached version (we ignore versioning and compress here, just to see how
 it works):
 
-~~~~ {.sourceCode .django}
+```django
 foo
 {% endRAW_xyz %}
     bar
 {% RAW_xyz %}
 baz
-~~~~
+```
 
 When cached version is loaded, we parse :
 
-~~~~ {.sourceCode .django}
+```django
 {% RAW_xyz %}
 foo
 {% endRAW_xyz %}
@@ -773,7 +773,7 @@ foo
 {% RAW_xyz %}
 baz
 {% endRAW_xyz %}
-~~~~
+```
 
 The first `{% RAW_xyz %}` and the last `{% endRAW_xyz %}` are not
 included in the cached version and added before parsing, only to save
@@ -840,9 +840,9 @@ command):
 Supported versions
 ------------------
 
-  Django version   Python version   Library version
-  ---------------- ---------------- -----------------
-  1.4 to 1.11      2.7              0.4
-  1.11, 2.0        3.4, 3.5, 3.6    1.1.1
-
-
+  Django version | Python version | Library version
+  -------------- | -------------- | ---------------
+  1.7 to 1.11    | 2.7            | 0.4
+  1.7            | 3.4            | 1.1.1
+  1.8 to 1.10    | 3.4, 3.5       | 1.1.1
+  1.11 to 2.0    | 3.4, 3.5, 3.6  | 1.1.1
