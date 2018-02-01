@@ -1,57 +1,14 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
-import codecs
 import sys
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 
-import adv_cache_tag
 
 if sys.version_info < (3,):
-    sys.stderr.write('Fatal error: django-adv-cache-tag %s only works with python 3. '
-                     'Use version <1.0 for python 2.\n' % adv_cache_tag.__version__)
+    sys.stderr.write('Fatal error: django-adv-cache-tag version >1 only works with python 3. '
+                     'Use version <1.0 for python 2.\n')
     sys.exit(1)
 
-long_description = codecs.open('README.rst', "r", "utf-8").read()
-
-setup(
-    name = "django-adv-cache-tag",
-    version = adv_cache_tag.__version__,
-    author = adv_cache_tag.__author__,
-    author_email = adv_cache_tag.__contact__,
-    description = adv_cache_tag.__doc__,
-    keywords = "django cache templatetag template",
-    url = adv_cache_tag.__homepage__,
-    download_url = "https://github.com/twidi/django-adv-cache-tag/tags",
-    packages = find_packages(),
-    include_package_data=True,
-    license = "MIT",
-    platforms=["any"],
-    zip_safe=True,
-
-    long_description = long_description,
-
-    classifiers = [
-        "Development Status :: 5 - Production/Stable",
-        "Environment :: Web Environment",
-        "Intended Audience :: Developers",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
-        "Topic :: Software Development :: Libraries :: Python Modules",
-        "Programming Language :: Python",
-        "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.2",
-        "Programming Language :: Python :: 3.3",
-        "Programming Language :: Python :: 3.4",
-        "Programming Language :: Python :: 3.5",
-        "Framework :: Django",
-        "Framework :: Django :: 1.5",
-        "Framework :: Django :: 1.6",
-        "Framework :: Django :: 1.7",
-        "Framework :: Django :: 1.8",
-#        "Framework :: Django :: 1.9",
-    ],
-)
+setup()
