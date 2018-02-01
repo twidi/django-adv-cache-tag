@@ -3,12 +3,14 @@ import pickle
 import time
 import zlib
 
+from copy import deepcopy
 from datetime import datetime
 
 from django.conf import settings
 from django.utils.encoding import force_bytes
 from django.utils.safestring import SafeText
 
+from django import VERSION as django_version
 from django.test.utils import override_settings
 from django.utils.http import urlquote
 
@@ -53,6 +55,9 @@ from .compat import TestCase
         {
             'BACKEND': 'django.template.backends.django.DjangoTemplates',
             'APP_DIRS': True,
+            'OPTIONS': {
+                'debug': False
+            }
         },
     ]
 )
@@ -138,7 +143,7 @@ class BasicTestCase(TestCase):
         """Compose the cache key of a template."""
         if vary_on is None:
             vary_on = ()
-        key = ':'.join([urlquote(var) for var in vary_on])
+        key = ':'.join([urlquote(force_bytes(var)) for var in vary_on])
         args = hashlib.md5(force_bytes(key))
         return (prefix + '.%s.%s') % (fragment_name, args.hexdigest())
 
@@ -838,6 +843,17 @@ class BasicTestCase(TestCase):
         self.assertEqual(self.get_name_called, 1)  # Still 1
         self.assertEqual(self.get_foo_called, 2)  # One more call to the non-cached part
 
+    def set_template_debug_true(self):
+        if django_version < (1, 8):
+            return override_settings(TEMPLATE_DEBUG=True)
+
+        # not so simple now, it's an option of a template backend
+        templates_settings_copy = deepcopy(settings.TEMPLATES)
+        for template_settings in templates_settings_copy:
+            if template_settings['BACKEND'] == 'django.template.backends.django.DjangoTemplates':
+                template_settings.setdefault('OPTIONS', {})['debug'] = True
+        return override_settings(TEMPLATES=templates_settings_copy)
+
     def test_failure_when_setting_cache(self):
         """Test that the template is correctly rendered even if the cache cannot be filled."""
 
@@ -863,8 +879,8 @@ class BasicTestCase(TestCase):
         # But not in the ``default`` cache
         self.assertIsNone(get_cache('default').get(key))
 
-        # It should raise if ``TEMPLATE_DEBUG`` is ``True``
-        with override_settings(TEMPLATE_DEBUG=True):
+        # It should raise if templates debug mode is activated
+        with self.set_template_debug_true():
             with self.assertRaises(ValueError) as raise_context:
                 self.render(t)
             self.assertIn('boom set', str(raise_context.exception))
@@ -895,8 +911,8 @@ class BasicTestCase(TestCase):
         cache_expected = b"1::\n                foobar"
         self.assertStripEqual(get_cache('default').get(key), cache_expected)
 
-        # It should raise if ``TEMPLATE_DEBUG`` is ``True``
-        with override_settings(TEMPLATE_DEBUG=True):
+        # It should raise if templates debug mode is activated
+        with self.set_template_debug_true():
             with self.assertRaises(ValueError) as raise_context:
                 self.render(t)
             self.assertIn('boom get', str(raise_context.exception))

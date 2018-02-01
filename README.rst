@@ -883,22 +883,16 @@ command)::
 Supported versions
 ------------------
 
-============== ==============
-Django version Python version
-============== ==============
-1.5, 1.6       3.2, 3.3
-1.7            3.2, 3.3, 3.4
-1.8            3.2, 3.3, 3.4, 3.5
-1.9            3.4, 3.5
-============== ==============
+============== ============== ===============
+Django version Python version Library version
+============== ============== ===============
+1.7 to 1.11    2.7            0.4
+1.11, 2.0      3.4, 3.5, 3.6  1.1.1
+============== ============== ==============
 
 Support for Python 2 is dropped since version 1 of ``django-adv-cache-tag``
 
 
-|Bitdeli Badge|
-
-.. |Bitdeli Badge| image:: https://d2weczhvl823v0.cloudfront.net/twidi/django-adv-cache-tag/trend.png
-   :target: https://bitdeli.com/free
 .. |PyPI Version| image:: https://img.shields.io/pypi/v/django-adv-cache-tag.png
    :target: https://pypi.python.org/pypi/django-adv-cache-tag
    :alt: PyPI Version

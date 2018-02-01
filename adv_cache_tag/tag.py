@@ -6,6 +6,7 @@ import pickle
 import re
 import zlib
 
+from django import VERSION as django_version
 from django.conf import settings
 from django.utils.encoding import smart_str, force_bytes
 from django.utils.http import urlquote
@@ -13,6 +14,18 @@ from django.utils.http import urlquote
 from .compat import get_cache, get_template_libraries, template
 
 logger = logging.getLogger('adv_cache_tag')
+
+
+def is_template_debug_activated():
+    if django_version < (1, 8):
+        return settings.TEMPLATE_DEBUG
+
+    # not so simple now, it's an option of a template backend
+    for template_settings in settings.TEMPLATES:
+        if template_settings['BACKEND'] == 'django.template.backends.django.DjangoTemplates':
+            return bool(template_settings.get('OPTIONS', {}).get('debug', False))
+
+    return False
 
 
 class Node(template.Node):
@@ -271,7 +284,7 @@ class CacheTag(object, metaclass=CacheTagMetaClass):
         Take all the arguments passed after the fragment name and return a
         hashed version which will be used in the cache key
         """
-        return hashlib.md5(force_bytes(':'.join([urlquote(var) for var in self.vary_on]))).hexdigest()
+        return hashlib.md5(force_bytes(':'.join([urlquote(force_bytes(var)) for var in self.vary_on]))).hexdigest()
 
     def get_pk(self):
         """
@@ -415,7 +428,7 @@ class CacheTag(object, metaclass=CacheTagMetaClass):
         try:
             self.cache_set(to_cache)
         except Exception:
-            if settings.TEMPLATE_DEBUG:
+            if is_template_debug_activated():
                 raise
             logger.exception('Error when saving the cached template fragment')
 
@@ -435,7 +448,7 @@ class CacheTag(object, metaclass=CacheTagMetaClass):
             try:
                 self.content = self.cache_get()
             except Exception:
-                if settings.TEMPLATE_DEBUG:
+                if is_template_debug_activated():
                     raise
                 logger.exception('Error when getting the cached template fragment')
 
@@ -477,7 +490,7 @@ class CacheTag(object, metaclass=CacheTagMetaClass):
         except template.TemplateSyntaxError:
             raise
         except Exception:
-            if settings.TEMPLATE_DEBUG:
+            if is_template_debug_activated():
                 raise
             logger.exception('Error when rendering template fragment')
             return ''
