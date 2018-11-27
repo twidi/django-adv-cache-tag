@@ -13,6 +13,21 @@ from django.utils.http import urlquote
 
 from .compat import get_cache, get_template_libraries, template
 
+
+try:
+    template.TokenType  # django >= 2.1 only
+except AttributeError:
+    TOKEN_TEXT = template.TOKEN_TEXT
+    TOKEN_VAR = template.TOKEN_VAR
+    TOKEN_BLOCK = template.TOKEN_BLOCK
+    TOKEN_COMMENT = template.TOKEN_COMMENT
+else:
+    TOKEN_TEXT = template.TokenType.TEXT
+    TOKEN_VAR = template.TokenType.VAR
+    TOKEN_BLOCK = template.TokenType.BLOCK
+    TOKEN_COMMENT = template.TokenType.COMMENT
+
+
 logger = logging.getLogger('adv_cache_tag')
 
 
@@ -628,10 +643,10 @@ class CacheTag(object, metaclass=CacheTagMetaClass):
             text = []
             parse_until = 'end%s' % token.contents
             tag_mapping = {
-                template.TOKEN_TEXT: ('', ''),
-                template.TOKEN_VAR: ('{{', '}}'),
-                template.TOKEN_BLOCK: ('{%', '%}'),
-                template.TOKEN_COMMENT: ('{#', '#}'),
+                TOKEN_TEXT: ('', ''),
+                TOKEN_VAR: ('{{', '}}'),
+                TOKEN_BLOCK: ('{%', '%}'),
+                TOKEN_COMMENT: ('{#', '#}'),
             }
             # By the time this template tag is called, the template system has already
             # lexed the template into tokens. Here, we loop over the tokens until
@@ -640,7 +655,7 @@ class CacheTag(object, metaclass=CacheTagMetaClass):
             # stripped off in a previous part of the template-parsing process.
             while parser.tokens:
                 token = parser.next_token()
-                if token.token_type == template.TOKEN_BLOCK and token.contents == parse_until:
+                if token.token_type == TOKEN_BLOCK and token.contents == parse_until:
                     return template.TextNode(''.join(text))
                 start, end = tag_mapping[token.token_type]
                 text.append('%s%s%s' % (start, token.contents, end))
