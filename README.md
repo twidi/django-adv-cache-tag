@@ -512,7 +512,7 @@ backend).
 
 The `CacheTag` class provides three classes to create the cache key:
 
--   `get_base_cache_key`, which returns a formattable string
+-   `get_base_cache_key`, which returns a formatable string
     ("template.%(nodename)s.%(name)s.%(pk)s.%(hash)s" by default if
     `include_pk` is `True` or "template.%(nodename)s.%(name)s.%(hash)s"
     if `False`
@@ -811,7 +811,7 @@ LICENSE file)
 Running tests
 -------------
 
-If `adv_cache_tag` is in the `INSTALLE_APPS` of your project, simply
+If `adv_cache_tag` is in the `INSTALLED_APPS` of your project, simply
 run:
 
     django-admin test adv_cache_tag
@@ -850,9 +850,11 @@ Supported versions
   Django version | Python version | Library version
   -------------- | -------------- | ---------------
   1.7 to 1.11    | 2.7            | 0.4
-  1.7            | 3.4            | 1.1.1
-  1.8 to 1.10    | 3.4, 3.5       | 1.1.1
-  1.11 to 2.0    | 3.4, 3.5, 3.6  | 1.1.1
+  1.7            | 3.4            | 1.1.2
+  1.8 to 1.10    | 3.4, 3.5       | 1.1.2
+  1.11           | 3.4 to 3.6     | 1.1.2
+  2.0            | 3.4, to 3.7    | 1.1.2
+  2.1            | 3.5 to 3.7     | 1.1.2
 
 Support for Python 2 is dropped since version 1 of
 `django-adv-cache-tag`
