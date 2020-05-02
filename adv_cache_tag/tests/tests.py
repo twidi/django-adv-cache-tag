@@ -638,6 +638,49 @@ class BasicTestCase(TestCase):
         self.assertEqual(self.get_name_called, 1)  # Still 1
         self.assertEqual(self.get_foo_called, 2)  # One more call to the non-cached part
 
+    @override_settings(
+        ADV_CACHE_VERSIONING = True,
+    )
+    def test_internal_version(self):
+        """Test a cache with `Meta.internal_version` set."""
+
+        # Reset CacheTag config with default value (from the ``override_settings``)
+        self.reload_config()
+
+        expected = "foobar"
+
+        t = """
+            {% load adv_cache_test %}
+            {% cache_with_version 1 test_cache_with_version obj.pk %}
+                {{ obj.get_name }}
+            {% endcache_with_version %}
+        """
+
+        # Render a first time, should miss the cache
+        self.assertStripEqual(self.render(t), expected)
+        self.assertEqual(self.get_name_called, 1)
+
+        # It should be in the cache, with the ``internal_version`` in the version
+        key = 'template.cache_with_version.test_cache_with_version.a1d0c6e83f027327d8461063f4ac58a6'
+        cache_expected = b"1|v1::\n                foobar"
+        self.assertStripEqual(get_cache('default').get(key), cache_expected)
+
+        self.get_name_called = 0
+        # Calling it a new time should hit the cache
+        self.assertStripEqual(self.render(t), expected)
+        self.assertEqual(self.get_name_called, 0)
+
+        # Changing the interval version should miss the cache
+        from .testproject.adv_cache_test_app.templatetags.adv_cache_test import InternalVersionTag
+        InternalVersionTag.options.internal_version = 'v2'
+        self.assertStripEqual(self.render(t), expected)
+        self.assertEqual(self.get_name_called, 1)
+
+        # It should be in the cache, with the new ``internal_version`` in the version
+        key = 'template.cache_with_version.test_cache_with_version.a1d0c6e83f027327d8461063f4ac58a6'
+        cache_expected = b"1|v2::\n                foobar"
+        self.assertStripEqual(get_cache('default').get(key), cache_expected)
+
     def test_new_class(self):
         """Test a new class based on ``CacheTag``."""
 

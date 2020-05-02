@@ -51,3 +51,11 @@ class FailingCacheGetCacheTag(CacheTag):
         raise ValueError('boom get')
 
 FailingCacheGetCacheTag.register(register, 'cache_get_fail')
+
+
+class InternalVersionTag(CacheTag):
+    class Meta(CacheTag.Meta):
+        internal_version = 'v1'
+
+
+InternalVersionTag.register(register, 'cache_with_version')

@@ -215,8 +215,8 @@ class CacheTag(object, metaclass=CacheTagMetaClass):
 
         # Final "INTERNAL_VERSION"
         if self.options.internal_version:
-            self.INTERNAL_VERSION = b'%s|%s' % (self.__class__.INTERNAL_VERSION,
-                                               self.options.internal_version)
+            self.INTERNAL_VERSION = force_bytes('%s|%s' % (self.__class__.INTERNAL_VERSION,
+                                                           self.options.internal_version))
         else:
             self.INTERNAL_VERSION = force_bytes(self.__class__.INTERNAL_VERSION)
 
