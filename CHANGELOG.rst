@@ -1,6 +1,11 @@
 Changelog
 =========
 
+To be released
+--------------
+* Fix failure when using ``internal_version``
+* Add a way to chose compression level
+
 Release *v1.1.2* - ``2018-11-27``
 ---------------------------------
 * Add support for Django 2.1

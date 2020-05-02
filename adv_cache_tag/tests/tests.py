@@ -44,6 +44,7 @@ from .compat import TestCase
     # Reset default config
     ADV_CACHE_VERSIONING = False,
     ADV_CACHE_COMPRESS = False,
+    ADV_CACHE_COMPRESS_LEVEL = zlib.Z_DEFAULT_COMPRESSION,
     ADV_CACHE_COMPRESS_SPACES= False,
     ADV_CACHE_INCLUDE_PK = False,
     ADV_CACHE_BACKEND = 'default',
@@ -69,6 +70,7 @@ class BasicTestCase(TestCase):
         """Resest the ``CacheTag`` configuration from current settings"""
         CacheTag.options.versioning = getattr(settings, 'ADV_CACHE_VERSIONING', False)
         CacheTag.options.compress = getattr(settings, 'ADV_CACHE_COMPRESS', False)
+        CacheTag.options.compress_level = getattr(settings, 'ADV_CACHE_COMPRESS_LEVEL', False)
         CacheTag.options.compress_spaces = getattr(settings, 'ADV_CACHE_COMPRESS_SPACES', False)
         CacheTag.options.include_pk = getattr(settings, 'ADV_CACHE_INCLUDE_PK', False)
         CacheTag.options.cache_backend = getattr(settings, 'ADV_CACHE_BACKEND', 'default')
@@ -503,7 +505,7 @@ class BasicTestCase(TestCase):
 
         # It should be in the cache, compressed
         # We use ``SafeText`` as django does in templates
-        compressed = zlib.compress(pickle.dumps(SafeText("  foobar  ")))
+        compressed = zlib.compress(pickle.dumps(SafeText("  foobar  ")), -1)
         cache_expected = b'1::' + compressed
         # Test with ``assertEqual``, not ``assertStripEqual``
         self.assertEqual(get_cache('default').get(key), cache_expected)
@@ -511,6 +513,20 @@ class BasicTestCase(TestCase):
         # Render a second time, should hit the cache
         self.assertStripEqual(self.render(t), expected)
         self.assertEqual(self.get_name_called, 1)  # Still 1
+
+        # Changing the compression level should not invalidate the cache
+        CacheTag.options.compress_level = 9
+        self.assertStripEqual(self.render(t), expected)
+        self.assertEqual(self.get_name_called, 1)  # Still 1
+
+        # But if the cache is invalidated, the new one will use this new level
+        get_cache('default').delete(key)
+        self.assertStripEqual(self.render(t), expected)
+        self.assertEqual(self.get_name_called, 2)  # One more
+        compressed = zlib.compress(pickle.dumps(SafeText("  foobar  ")), 9)
+        cache_expected = b'1::' + compressed
+        self.assertEqual(get_cache('default').get(key), cache_expected)
+
 
     @override_settings(
         ADV_CACHE_COMPRESS = True,

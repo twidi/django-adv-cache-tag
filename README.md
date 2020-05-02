@@ -219,6 +219,10 @@ own version:
 `ADV_CACHE_COMPRESS`, default to `False`, to activate the compression
 via `zlib`
 
+`ADV_CACHE_COMPRESS_LEVEL`, default to `-1`, to set le compression level
+for `zlib` (actually the default is `zlib.Z_DEFAULT_COMPRESSION`, which is
+`-1`, that will be in fact `6` as the actual default defined in `zlib`)
+
 `ADV_CACHE_COMPRESS_SPACES`, default to `False`, to activate the
 reduction of blank characters.
 
@@ -728,6 +732,9 @@ object)
     (`versioning` in the `Meta` class)
 -   `ADV_CACHE_COMPRESS` to activate compression, default to `False`
     (`compress` in the `Meta` class)
+-   `ADV_CACHE_COMPRESS_LEVEL` to set the compression level (from `1` (min
+    compression) to `9` (max compression), default to `-1` (equivalent to
+    `6`) (`compress_level` in the `Meta` class)
 -   `ADV_CACHE_COMPRESS_SPACES` to activate spaces compression, default
     to `False` (`compress_spaces` in the `Meta` class)
 -   `ADV_CACHE_INCLUDE_PK` to activate the "primary key" feature,
