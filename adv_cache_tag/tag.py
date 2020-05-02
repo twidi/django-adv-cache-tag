@@ -112,6 +112,7 @@ class CacheTag(object, metaclass=CacheTagMetaClass):
 
         * ADV_CACHE_VERSIONING
         * ADV_CACHE_COMPRESS
+        * ADV_CACHE_COMPRESS_LEVEL
         * ADV_CACHE_COMPRESS_SPACES
         * ADV_CACHE_INCLUDE_PK
         * ADV_CACHE_BACKEND
@@ -169,6 +170,7 @@ class CacheTag(object, metaclass=CacheTagMetaClass):
 
         # If the content will be compressed before caching
         compress = getattr(settings, 'ADV_CACHE_COMPRESS', False)
+        compress_level = getattr(settings, 'ADV_CACHE_COMPRESS_LEVEL', zlib.Z_DEFAULT_COMPRESSION)
 
         # If many spaces/blanks will be converted into one
         compress_spaces = getattr(settings, 'ADV_CACHE_COMPRESS_SPACES', False)
@@ -215,8 +217,8 @@ class CacheTag(object, metaclass=CacheTagMetaClass):
 
         # Final "INTERNAL_VERSION"
         if self.options.internal_version:
-            self.INTERNAL_VERSION = b'%s|%s' % (self.__class__.INTERNAL_VERSION,
-                                               self.options.internal_version)
+            self.INTERNAL_VERSION = force_bytes('%s|%s' % (self.__class__.INTERNAL_VERSION,
+                                                           self.options.internal_version))
         else:
             self.INTERNAL_VERSION = force_bytes(self.__class__.INTERNAL_VERSION)
 
@@ -416,7 +418,7 @@ class CacheTag(object, metaclass=CacheTagMetaClass):
         """
         Encode (compress...) the html to the data to be cached
         """
-        return zlib.compress(pickle.dumps(self.content))
+        return zlib.compress(pickle.dumps(self.content), self.options.compress_level)
 
     def render_node(self):
         """

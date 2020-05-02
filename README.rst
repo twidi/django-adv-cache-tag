@@ -230,6 +230,10 @@ Settings
 ``ADV_CACHE_COMPRESS``, default to ``False``, to activate the
 compression via ``zlib``
 
+``ADV_CACHE_COMPRESS_LEVEL``, default to ``-1``, to set le compression level
+for ``zlib`` (actually the default is ``zlib.Z_DEFAULT_COMPRESSION``, which is
+``-1``, that will be in fact ``6`` as the actual default defined in ``zlib``)
+
 ``ADV_CACHE_COMPRESS_SPACES``, default to ``False``, to activate the
 reduction of blank characters.
 
@@ -763,6 +767,9 @@ list, with descriptions, default values, and corresponding fields in the
    (``versioning`` in the ``Meta`` class)
 -  ``ADV_CACHE_COMPRESS`` to activate compression, default to ``False``
    (``compress`` in the ``Meta`` class)
+-   ``ADV_CACHE_COMPRESS_LEVEL`` to set the compression level (from ``1`` (min
+    compression) to ``9`` (max compression), default to ``-1`` (equivalent to
+    ``6``) (``compress_level`` in the ``Meta`` class)
 -  ``ADV_CACHE_COMPRESS_SPACES`` to activate spaces compression, default
    to ``False`` (``compress_spaces`` in the ``Meta`` class)
 -  ``ADV_CACHE_INCLUDE_PK`` to activate the "primary key" feature,
@@ -887,11 +894,13 @@ Supported versions
 Django version Python version Library version
 ============== ============== ===============
 1.7 to 1.11    2.7            0.4
-1.7            3.4            1.1.1
-1.8 to 1.10    3.4, 3.5       1.1.1
-1.11           3.4 to 3.6     1.1.1
-2.0            3.4, to 3.7    1.1.2
-2.1            3.5 to 3.7     1.1.2
+1.7            3.4            1.1.3
+1.8 to 1.10    3.4, 3.5       1.1.3
+1.11           3.4 to 3.6     1.1.3
+2.0            3.4, to 3.7    1.1.3
+2.1            3.5 to 3.7     1.1.3
+2.2            3.5 to 3.8     1.1.3
+3.0            3.6 to 3.8     1.1.3
 ============== ============== ===============
 
 Support for Python 2 is dropped since version 1 of ``django-adv-cache-tag``

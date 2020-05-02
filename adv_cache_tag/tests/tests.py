@@ -44,6 +44,7 @@ from .compat import TestCase
     # Reset default config
     ADV_CACHE_VERSIONING = False,
     ADV_CACHE_COMPRESS = False,
+    ADV_CACHE_COMPRESS_LEVEL = zlib.Z_DEFAULT_COMPRESSION,
     ADV_CACHE_COMPRESS_SPACES= False,
     ADV_CACHE_INCLUDE_PK = False,
     ADV_CACHE_BACKEND = 'default',
@@ -69,6 +70,7 @@ class BasicTestCase(TestCase):
         """Resest the ``CacheTag`` configuration from current settings"""
         CacheTag.options.versioning = getattr(settings, 'ADV_CACHE_VERSIONING', False)
         CacheTag.options.compress = getattr(settings, 'ADV_CACHE_COMPRESS', False)
+        CacheTag.options.compress_level = getattr(settings, 'ADV_CACHE_COMPRESS_LEVEL', False)
         CacheTag.options.compress_spaces = getattr(settings, 'ADV_CACHE_COMPRESS_SPACES', False)
         CacheTag.options.include_pk = getattr(settings, 'ADV_CACHE_INCLUDE_PK', False)
         CacheTag.options.cache_backend = getattr(settings, 'ADV_CACHE_BACKEND', 'default')
@@ -503,7 +505,7 @@ class BasicTestCase(TestCase):
 
         # It should be in the cache, compressed
         # We use ``SafeText`` as django does in templates
-        compressed = zlib.compress(pickle.dumps(SafeText("  foobar  ")))
+        compressed = zlib.compress(pickle.dumps(SafeText("  foobar  ")), -1)
         cache_expected = b'1::' + compressed
         # Test with ``assertEqual``, not ``assertStripEqual``
         self.assertEqual(get_cache('default').get(key), cache_expected)
@@ -511,6 +513,20 @@ class BasicTestCase(TestCase):
         # Render a second time, should hit the cache
         self.assertStripEqual(self.render(t), expected)
         self.assertEqual(self.get_name_called, 1)  # Still 1
+
+        # Changing the compression level should not invalidate the cache
+        CacheTag.options.compress_level = 9
+        self.assertStripEqual(self.render(t), expected)
+        self.assertEqual(self.get_name_called, 1)  # Still 1
+
+        # But if the cache is invalidated, the new one will use this new level
+        get_cache('default').delete(key)
+        self.assertStripEqual(self.render(t), expected)
+        self.assertEqual(self.get_name_called, 2)  # One more
+        compressed = zlib.compress(pickle.dumps(SafeText("  foobar  ")), 9)
+        cache_expected = b'1::' + compressed
+        self.assertEqual(get_cache('default').get(key), cache_expected)
+
 
     @override_settings(
         ADV_CACHE_COMPRESS = True,
@@ -637,6 +653,49 @@ class BasicTestCase(TestCase):
         self.assertStripEqual(self.render(t), expected)
         self.assertEqual(self.get_name_called, 1)  # Still 1
         self.assertEqual(self.get_foo_called, 2)  # One more call to the non-cached part
+
+    @override_settings(
+        ADV_CACHE_VERSIONING = True,
+    )
+    def test_internal_version(self):
+        """Test a cache with `Meta.internal_version` set."""
+
+        # Reset CacheTag config with default value (from the ``override_settings``)
+        self.reload_config()
+
+        expected = "foobar"
+
+        t = """
+            {% load adv_cache_test %}
+            {% cache_with_version 1 test_cache_with_version obj.pk %}
+                {{ obj.get_name }}
+            {% endcache_with_version %}
+        """
+
+        # Render a first time, should miss the cache
+        self.assertStripEqual(self.render(t), expected)
+        self.assertEqual(self.get_name_called, 1)
+
+        # It should be in the cache, with the ``internal_version`` in the version
+        key = 'template.cache_with_version.test_cache_with_version.a1d0c6e83f027327d8461063f4ac58a6'
+        cache_expected = b"1|v1::\n                foobar"
+        self.assertStripEqual(get_cache('default').get(key), cache_expected)
+
+        self.get_name_called = 0
+        # Calling it a new time should hit the cache
+        self.assertStripEqual(self.render(t), expected)
+        self.assertEqual(self.get_name_called, 0)
+
+        # Changing the interval version should miss the cache
+        from .testproject.adv_cache_test_app.templatetags.adv_cache_test import InternalVersionTag
+        InternalVersionTag.options.internal_version = 'v2'
+        self.assertStripEqual(self.render(t), expected)
+        self.assertEqual(self.get_name_called, 1)
+
+        # It should be in the cache, with the new ``internal_version`` in the version
+        key = 'template.cache_with_version.test_cache_with_version.a1d0c6e83f027327d8461063f4ac58a6'
+        cache_expected = b"1|v2::\n                foobar"
+        self.assertStripEqual(get_cache('default').get(key), cache_expected)
 
     def test_new_class(self):
         """Test a new class based on ``CacheTag``."""
