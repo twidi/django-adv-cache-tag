@@ -1,8 +1,8 @@
 Changelog
 =========
 
-To be released
---------------
+Release *v1.1.3* - ``2020-05-01``
+---------------------------------
 * Fix failure when using ``internal_version``
 * Add a way to chose compression level
 * Add support for Django 2.2 and 3.0
