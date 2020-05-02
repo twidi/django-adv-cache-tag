@@ -862,6 +862,8 @@ Supported versions
   1.11           | 3.4 to 3.6     | 1.1.2
   2.0            | 3.4, to 3.7    | 1.1.2
   2.1            | 3.5 to 3.7     | 1.1.2
+  2.2            | 3.5 to 3.8     | ?
+  3.0            | 3.6 to 3.8     | ?
 
 Support for Python 2 is dropped since version 1 of
 `django-adv-cache-tag`

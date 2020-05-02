@@ -5,6 +5,8 @@ To be released
 --------------
 * Fix failure when using ``internal_version``
 * Add a way to chose compression level
+* Add support for Django 2.2 and 3.0
+* Add support for Python 3.8
 
 Release *v1.1.2* - ``2018-11-27``
 ---------------------------------
