@@ -5,11 +5,11 @@ import logging
 import pickle
 import re
 import zlib
+from urllib.parse import quote
 
 from django import VERSION as django_version
 from django.conf import settings
 from django.utils.encoding import smart_str, force_bytes
-from django.utils.http import urlquote
 
 from .compat import get_cache, get_template_libraries, template
 
@@ -301,7 +301,7 @@ class CacheTag(object, metaclass=CacheTagMetaClass):
         Take all the arguments passed after the fragment name and return a
         hashed version which will be used in the cache key
         """
-        return hashlib.md5(force_bytes(':'.join([urlquote(force_bytes(var)) for var in self.vary_on]))).hexdigest()
+        return hashlib.md5(force_bytes(':'.join([quote(force_bytes(var)) for var in self.vary_on]))).hexdigest()
 
     def get_pk(self):
         """
