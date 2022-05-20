@@ -9,7 +9,7 @@ import zlib
 from django import VERSION as django_version
 from django.conf import settings
 from django.utils.encoding import smart_str, force_bytes
-from urlparse import quote
+from urllib.parse import quote
 
 from .compat import get_cache, get_template_libraries, template
 
