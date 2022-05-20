@@ -22,7 +22,7 @@ def get_template_libraries():
         from django.template.base import libraries
     except ImportError:
         # Django >= 1.9
-        from django.template import engines
-        libraries = engines['django'].engine.template_libraries
+        from django.template import Engine
+        libraries = Engine.get_default().template_libraries
 
     return libraries
