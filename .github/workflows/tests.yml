@@ -1,0 +1,110 @@
+name: Tests
+
+on:
+  push:
+    branches: [ master, main, develop, 'claude/**' ]
+  pull_request:
+    branches: [ master, main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Django 4.2 - Python 3.10, 3.11, 3.12
+          - python-version: "3.10"
+            django-version: "Django>=4.2,<4.3"
+            django-label: "4.2"
+          - python-version: "3.11"
+            django-version: "Django>=4.2,<4.3"
+            django-label: "4.2"
+          - python-version: "3.12"
+            django-version: "Django>=4.2,<4.3"
+            django-label: "4.2"
+
+          # Django 5.0 - Python 3.10, 3.11, 3.12
+          - python-version: "3.10"
+            django-version: "Django>=5.0,<5.1"
+            django-label: "5.0"
+          - python-version: "3.11"
+            django-version: "Django>=5.0,<5.1"
+            django-label: "5.0"
+          - python-version: "3.12"
+            django-version: "Django>=5.0,<5.1"
+            django-label: "5.0"
+
+          # Django 5.1 - Python 3.10, 3.11, 3.12, 3.13
+          - python-version: "3.10"
+            django-version: "Django>=5.1,<5.2"
+            django-label: "5.1"
+          - python-version: "3.11"
+            django-version: "Django>=5.1,<5.2"
+            django-label: "5.1"
+          - python-version: "3.12"
+            django-version: "Django>=5.1,<5.2"
+            django-label: "5.1"
+          - python-version: "3.13"
+            django-version: "Django>=5.1,<5.2"
+            django-label: "5.1"
+
+          # Django 5.2 - Python 3.10, 3.11, 3.12, 3.13, 3.14
+          - python-version: "3.10"
+            django-version: "Django>=5.2,<5.3"
+            django-label: "5.2"
+          - python-version: "3.11"
+            django-version: "Django>=5.2,<5.3"
+            django-label: "5.2"
+          - python-version: "3.12"
+            django-version: "Django>=5.2,<5.3"
+            django-label: "5.2"
+          - python-version: "3.13"
+            django-version: "Django>=5.2,<5.3"
+            django-label: "5.2"
+          - python-version: "3.14"
+            django-version: "Django>=5.2,<5.3"
+            django-label: "5.2"
+            allow-prereleases: true
+
+          # Django 6.0 - Python 3.12, 3.13, 3.14
+          - python-version: "3.12"
+            django-version: "Django>=6.0,<6.1"
+            django-label: "6.0"
+          - python-version: "3.13"
+            django-version: "Django>=6.0,<6.1"
+            django-label: "6.0"
+          - python-version: "3.14"
+            django-version: "Django>=6.0,<6.1"
+            django-label: "6.0"
+            allow-prereleases: true
+
+    name: Python ${{ matrix.python-version }} - Django ${{ matrix.django-label }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          allow-prereleases: ${{ matrix.allow-prereleases || false }}
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-django${{ matrix.django-label }}
+          restore-keys: |
+            ${{ runner.os }}-pip-${{ matrix.python-version }}-
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install "${{ matrix.django-version }}"
+          pip install -e .
+
+      - name: Run tests
+        run: |
+          DJANGO_SETTINGS_MODULE=adv_cache_tag.tests.testproject.settings django-admin test adv_cache_tag

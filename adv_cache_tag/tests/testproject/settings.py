@@ -1,9 +1,11 @@
 import os.path
 
 DEBUG = True
-TEMPLATE_DEBUG = DEBUG
 
 SECRET_KEY = 'm-92)2et+&&m5f&#jld7-_1qanq*n9!z90xc@+wx6y8d6y#w6t'
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+USE_TZ = True
 
 BASE_DIR = os.path.dirname(__file__)
 
@@ -28,7 +30,7 @@ INSTALLED_APPS = [
     'adv_cache_tag.tests.testproject.adv_cache_test_app',
 ]
 
-MIDDLEWARE_CLASSES = [
+MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

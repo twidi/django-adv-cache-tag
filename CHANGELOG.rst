@@ -1,6 +1,17 @@
 Changelog
 =========
 
+Release *v1.2.0* - ``2025-01-23``
+---------------------------------
+* **BREAKING CHANGE**: Cache key algorithm changed to match Django's ``make_template_fragment_key``.
+  All existing cached fragments will be invalidated on upgrade.
+* Add support for Django 4.2, 5.0, 5.1, 5.2, and 6.0
+* Add support for Python 3.10, 3.11, 3.12, 3.13, and 3.14
+* Drop support for Django < 4.2 and Python < 3.10
+* Migrate CI from Travis CI to GitHub Actions
+* Replace deprecated ``pkg_resources`` with ``importlib.metadata``
+* Remove deprecated ``urlquote`` usage (use ``urllib.parse.quote``)
+
 Release *v1.1.3* - ``2020-05-01``
 ---------------------------------
 * Fix failure when using ``internal_version``

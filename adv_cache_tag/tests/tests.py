@@ -3,28 +3,30 @@ import pickle
 import time
 import zlib
 
+from contextlib import contextmanager
 from copy import deepcopy
 from datetime import datetime
 
+from django import template
 from django.conf import settings
+from django.core.cache import caches
+from django.template.base import BLOCK_TAG_START, BLOCK_TAG_END
+from django.test import TestCase
+from django.test.utils import override_settings
 from django.utils.encoding import force_bytes
 from django.utils.safestring import SafeText
 
-from django import VERSION as django_version
-from django.test.utils import override_settings
-from django.utils.http import urlquote
-
-from adv_cache_tag.compat import get_cache, template
 from adv_cache_tag.tag import CacheTag
 
-from .compat import TestCase
+
+def get_cache(name):
+    return caches[name]
 
 
 # Force some settings to not depend on the external ones
 @override_settings(
 
     DEBUG = False,
-    TEMPLATE_DEBUG = False,
 
     # Force using memory cache
     CACHES = {
@@ -84,10 +86,10 @@ class BasicTestCase(TestCase):
         ).hexdigest()
 
         # tokens to use around the already parsed parts of the cached template
-        CacheTag.RAW_TOKEN_START = template.BLOCK_TAG_START + CacheTag.RAW_TOKEN + \
-                                   template.BLOCK_TAG_END
-        CacheTag.RAW_TOKEN_END = template.BLOCK_TAG_START + 'end' + CacheTag.RAW_TOKEN + \
-                                 template.BLOCK_TAG_END
+        CacheTag.RAW_TOKEN_START = BLOCK_TAG_START + CacheTag.RAW_TOKEN + \
+                                   BLOCK_TAG_END
+        CacheTag.RAW_TOKEN_END = BLOCK_TAG_START + 'end' + CacheTag.RAW_TOKEN + \
+                                 BLOCK_TAG_END
 
     def setUp(self):
         """Clean stuff and create an object to use in templates, and some counters."""
@@ -142,11 +144,9 @@ class BasicTestCase(TestCase):
 
     @staticmethod
     def get_template_key(fragment_name, vary_on=None, prefix='template.cache'):
-        """Compose the cache key of a template."""
-        if vary_on is None:
-            vary_on = ()
-        key = ':'.join([urlquote(force_bytes(var)) for var in vary_on])
-        args = hashlib.md5(force_bytes(key))
+        """Compose the cache key of a template, using same algorithm as django `make_template_fragment_key`."""
+        key = (b':'.join([str(var).encode() for var in vary_on]) + b":") if vary_on else b""
+        args = hashlib.md5(key, usedforsecurity=False)
         return (prefix + '.%s.%s') % (fragment_name, args.hexdigest())
 
     def render(self, template_text, extend_context_dict=None):
@@ -194,7 +194,7 @@ class BasicTestCase(TestCase):
         key = self.get_template_key('test_cached_template',
                                     vary_on=[self.obj['pk'], self.obj['updated_at']])
         self.assertEqual(
-            key, 'template.cache.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
+            key, 'template.cache.test_cached_template.27ec3d708052c29b29e013c11f4cd8d0')
 
         self.assertStripEqual(get_cache('default').get(key), expected)
 
@@ -222,7 +222,7 @@ class BasicTestCase(TestCase):
         key = self.get_template_key('test_cached_template',
                                     vary_on=[self.obj['pk'], self.obj['updated_at']])
         self.assertEqual(
-            key, 'template.cache.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
+            key, 'template.cache.test_cached_template.27ec3d708052c29b29e013c11f4cd8d0')
 
         # But it should NOT be the exact content as adv_cache_tag adds a version
         self.assertNotStripEqual(get_cache('default').get(key), expected)
@@ -331,7 +331,7 @@ class BasicTestCase(TestCase):
         key = self.get_template_key('test_cached_template',
                                     vary_on=[self.obj['pk'], 'foo', self.obj['updated_at']])
         self.assertEqual(  # no quotes arround `test_cached_template`
-            key, 'template.cache.test_cached_template.f2f294788f4c38512d3b544ce07befd0')
+            key, 'template.cache.test_cached_template.1ae6d784dbefb03c2e42e8b1484d4872')
         cache_expected = b"1::\n                foobar foo"
         self.assertStripEqual(get_cache('default').get(key), cache_expected)
 
@@ -346,7 +346,7 @@ class BasicTestCase(TestCase):
         key = self.get_template_key('test_cached_template',
                                     vary_on=[self.obj['pk'], 'bar', self.obj['updated_at']])
         self.assertEqual(  # no quotes arround `test_cached_template`
-            key, 'template.cache.test_cached_template.8bccdefc91dc857fc02f6938bf69b816')
+            key, 'template.cache.test_cached_template.20f69572df3990af6d518ed4916aff72')
         cache_expected = b"1::\n                foobar bar"
         self.assertStripEqual(get_cache('default').get(key), cache_expected)
 
@@ -377,7 +377,7 @@ class BasicTestCase(TestCase):
         # ``obj.updated_at`` is not in the key anymore, serving as the object version
         key = self.get_template_key('test_cached_template', vary_on=[self.obj['pk']])
         self.assertEqual(
-            key, 'template.cache.test_cached_template.a1d0c6e83f027327d8461063f4ac58a6')
+            key, 'template.cache.test_cached_template.ef70b397e869e6fd08714e2f9edd3f8c')
 
         # It should be in the cache, with the ``updated_at`` in the version
         cache_expected = b"1::2015-10-27 00:00:00::\n                foobar"
@@ -430,7 +430,7 @@ class BasicTestCase(TestCase):
         key = self.get_template_key('test_cached_template.%s' % self.obj['pk'],
                                     vary_on=[self.obj['pk'], self.obj['updated_at']])
         self.assertEqual(
-            key, 'template.cache.test_cached_template.42.0cac9a03d5330dd78ddc9a0c16f01403')
+            key, 'template.cache.test_cached_template.42.27ec3d708052c29b29e013c11f4cd8d0')
 
         # It should be in the cache
         cache_expected = b"1::\n                foobar"
@@ -466,7 +466,7 @@ class BasicTestCase(TestCase):
         key = self.get_template_key('test_cached_template',
                                     vary_on=[self.obj['pk'], self.obj['updated_at']])
         self.assertEqual(
-            key, 'template.cache.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
+            key, 'template.cache.test_cached_template.27ec3d708052c29b29e013c11f4cd8d0')
 
         # It should be in the cache, with only one space instead of many white spaces
         cache_expected = b"1:: foobar "
@@ -501,7 +501,7 @@ class BasicTestCase(TestCase):
         key = self.get_template_key('test_cached_template',
                                     vary_on=[self.obj['pk'], self.obj['updated_at']])
         self.assertEqual(
-            key, 'template.cache.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
+            key, 'template.cache.test_cached_template.27ec3d708052c29b29e013c11f4cd8d0')
 
         # It should be in the cache, compressed
         # We use ``SafeText`` as django does in templates
@@ -555,7 +555,7 @@ class BasicTestCase(TestCase):
         key = self.get_template_key('test_cached_template',
                                     vary_on=[self.obj['pk'], self.obj['updated_at']])
         self.assertEqual(
-            key, 'template.cache.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
+            key, 'template.cache.test_cached_template.27ec3d708052c29b29e013c11f4cd8d0')
 
         # It should be in the cache, compressed
         # We DON'T use ``SafeText`` as in ``test_compression`` because with was converted back
@@ -595,7 +595,7 @@ class BasicTestCase(TestCase):
         key = self.get_template_key('test_cached_template',
                                     vary_on=[self.obj['pk'], self.obj['updated_at']])
         self.assertEqual(
-            key, 'template.cache.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
+            key, 'template.cache.test_cached_template.27ec3d708052c29b29e013c11f4cd8d0')
 
         # It should be in the cache
         cache_expected = b"1::\n                foobar"
@@ -641,7 +641,7 @@ class BasicTestCase(TestCase):
         key = self.get_template_key('test_cached_template',
                                     vary_on=[self.obj['pk'], self.obj['updated_at']])
         self.assertEqual(
-            key, 'template.cache.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
+            key, 'template.cache.test_cached_template.27ec3d708052c29b29e013c11f4cd8d0')
 
         # It should be in the cache, with the RAW part
         cache_expected = b"1:: foobar {%endRAW_38a11088962625eb8c913e791931e2bc2e3c7228%} " \
@@ -677,7 +677,7 @@ class BasicTestCase(TestCase):
         self.assertEqual(self.get_name_called, 1)
 
         # It should be in the cache, with the ``internal_version`` in the version
-        key = 'template.cache_with_version.test_cache_with_version.a1d0c6e83f027327d8461063f4ac58a6'
+        key = 'template.cache_with_version.test_cache_with_version.ef70b397e869e6fd08714e2f9edd3f8c'
         cache_expected = b"1|v1::\n                foobar"
         self.assertStripEqual(get_cache('default').get(key), cache_expected)
 
@@ -693,7 +693,7 @@ class BasicTestCase(TestCase):
         self.assertEqual(self.get_name_called, 1)
 
         # It should be in the cache, with the new ``internal_version`` in the version
-        key = 'template.cache_with_version.test_cache_with_version.a1d0c6e83f027327d8461063f4ac58a6'
+        key = 'template.cache_with_version.test_cache_with_version.ef70b397e869e6fd08714e2f9edd3f8c'
         cache_expected = b"1|v2::\n                foobar"
         self.assertStripEqual(get_cache('default').get(key), cache_expected)
 
@@ -723,7 +723,7 @@ class BasicTestCase(TestCase):
                                     vary_on=[self.obj['pk'], self.obj['updated_at']],
                                     prefix='template.cache_test')
         self.assertEqual(
-            key, 'template.cache_test.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
+            key, 'template.cache_test.test_cached_template.27ec3d708052c29b29e013c11f4cd8d0')
 
         # It should be in the cache, with the RAW part
         cache_expected = b"1:: foobar {%endRAW_38a11088962625eb8c913e791931e2bc2e3c7228%} " \
@@ -769,7 +769,7 @@ class BasicTestCase(TestCase):
         key = self.get_template_key('test_cached_template',
                                     vary_on=[self.obj['pk'], self.obj['updated_at']])
         self.assertEqual(
-            key, 'template.cache.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
+            key, 'template.cache.test_cached_template.27ec3d708052c29b29e013c11f4cd8d0')
 
         # But it should NOT be the exact content as adv_cache_tag adds a version
         self.assertNotStripEqual(get_cache('default').get(key), expected)
@@ -820,7 +820,7 @@ class BasicTestCase(TestCase):
         key = self.get_template_key('test_cached_template',
                                     vary_on=[self.obj['pk'], self.obj['updated_at']])
         self.assertEqual(
-            key, 'template.cache.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
+            key, 'template.cache.test_cached_template.27ec3d708052c29b29e013c11f4cd8d0')
 
         # But it should NOT be the exact content as adv_cache_tag adds a version
         self.assertNotStripEqual(get_cache('default').get(key), expected)
@@ -853,7 +853,7 @@ class BasicTestCase(TestCase):
         key = self.get_template_key('test_cached_template',
                                     vary_on=[self.obj['pk'], self.obj['updated_at']])
         self.assertEqual(
-            key, 'template.cache.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
+            key, 'template.cache.test_cached_template.27ec3d708052c29b29e013c11f4cd8d0')
 
         # It should be in the cache
         cache_expected = b"1::\n                foobar"
@@ -902,16 +902,23 @@ class BasicTestCase(TestCase):
         self.assertEqual(self.get_name_called, 1)  # Still 1
         self.assertEqual(self.get_foo_called, 2)  # One more call to the non-cached part
 
+    @contextmanager
     def set_template_debug_true(self):
-        if django_version < (1, 8):
-            return override_settings(TEMPLATE_DEBUG=True)
+        """Context manager that enables template debug and properly resets the cache."""
+        from adv_cache_tag.tag import reset_template_debug_cache
 
-        # not so simple now, it's an option of a template backend
+        # Set debug option in template backend settings
         templates_settings_copy = deepcopy(settings.TEMPLATES)
         for template_settings in templates_settings_copy:
             if template_settings['BACKEND'] == 'django.template.backends.django.DjangoTemplates':
                 template_settings.setdefault('OPTIONS', {})['debug'] = True
-        return override_settings(TEMPLATES=templates_settings_copy)
+
+        with override_settings(TEMPLATES=templates_settings_copy):
+            reset_template_debug_cache()
+            try:
+                yield
+            finally:
+                reset_template_debug_cache()
 
     def test_failure_when_setting_cache(self):
         """Test that the template is correctly rendered even if the cache cannot be filled."""
@@ -933,7 +940,7 @@ class BasicTestCase(TestCase):
                                     vary_on=[self.obj['pk'], self.obj['updated_at']],
                                     prefix='template.cache_set_fail')
         self.assertEqual(
-            key, 'template.cache_set_fail.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
+            key, 'template.cache_set_fail.test_cached_template.27ec3d708052c29b29e013c11f4cd8d0')
 
         # But not in the ``default`` cache
         self.assertIsNone(get_cache('default').get(key))
@@ -964,7 +971,7 @@ class BasicTestCase(TestCase):
                                     vary_on=[self.obj['pk'], self.obj['updated_at']],
                                     prefix='template.cache_get_fail')
         self.assertEqual(
-            key, 'template.cache_get_fail.test_cached_template.0cac9a03d5330dd78ddc9a0c16f01403')
+            key, 'template.cache_get_fail.test_cached_template.27ec3d708052c29b29e013c11f4cd8d0')
 
         # It should be in the cache
         cache_expected = b"1::\n                foobar"

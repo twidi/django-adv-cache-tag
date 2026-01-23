@@ -6,41 +6,50 @@ import pickle
 import re
 import zlib
 
-from django import VERSION as django_version
+from django import template
 from django.conf import settings
+from django.core.cache import caches
+from django.template import engines
+from django.template.base import TokenType, BLOCK_TAG_START, BLOCK_TAG_END, TextNode
 from django.utils.encoding import smart_str, force_bytes
-from django.utils.http import urlquote
-
-from .compat import get_cache, get_template_libraries, template
 
 
-try:
-    template.TokenType  # django >= 2.1 only
-except AttributeError:
-    TOKEN_TEXT = template.TOKEN_TEXT
-    TOKEN_VAR = template.TOKEN_VAR
-    TOKEN_BLOCK = template.TOKEN_BLOCK
-    TOKEN_COMMENT = template.TOKEN_COMMENT
-else:
-    TOKEN_TEXT = template.TokenType.TEXT
-    TOKEN_VAR = template.TokenType.VAR
-    TOKEN_BLOCK = template.TokenType.BLOCK
-    TOKEN_COMMENT = template.TokenType.COMMENT
+TOKEN_TEXT = TokenType.TEXT
+TOKEN_VAR = TokenType.VAR
+TOKEN_BLOCK = TokenType.BLOCK
+TOKEN_COMMENT = TokenType.COMMENT
+
+
+def get_cache(name):
+    return caches[name]
+
+
+def get_template_libraries():
+    return engines['django'].engine.template_libraries
 
 
 logger = logging.getLogger('adv_cache_tag')
 
+# Cache for template debug setting (computed once, reset via reset_template_debug_cache)
+_TEMPLATE_DEBUG = None
+
+
+def reset_template_debug_cache():
+    """Reset the cached template debug value. Call this when TEMPLATES settings change."""
+    global _TEMPLATE_DEBUG
+    _TEMPLATE_DEBUG = None
+
 
 def is_template_debug_activated():
-    if django_version < (1, 8):
-        return settings.TEMPLATE_DEBUG
-
-    # not so simple now, it's an option of a template backend
-    for template_settings in settings.TEMPLATES:
-        if template_settings['BACKEND'] == 'django.template.backends.django.DjangoTemplates':
-            return bool(template_settings.get('OPTIONS', {}).get('debug', False))
-
-    return False
+    """Check if debug is enabled in template backend options. Result is cached."""
+    global _TEMPLATE_DEBUG
+    if _TEMPLATE_DEBUG is None:
+        _TEMPLATE_DEBUG = False
+        for template_settings in settings.TEMPLATES:
+            if template_settings['BACKEND'] == 'django.template.backends.django.DjangoTemplates':
+                _TEMPLATE_DEBUG = bool(template_settings.get('OPTIONS', {}).get('debug', False))
+                break
+    return _TEMPLATE_DEBUG
 
 
 class Node(template.Node):
@@ -147,8 +156,8 @@ class CacheTag(object, metaclass=CacheTagMetaClass):
     ).hexdigest()
 
     # tokens to use around the already parsed parts of the cached template
-    RAW_TOKEN_START = template.BLOCK_TAG_START + RAW_TOKEN + template.BLOCK_TAG_END
-    RAW_TOKEN_END = template.BLOCK_TAG_START + 'end' + RAW_TOKEN + template.BLOCK_TAG_END
+    RAW_TOKEN_START = BLOCK_TAG_START + RAW_TOKEN + BLOCK_TAG_END
+    RAW_TOKEN_END = BLOCK_TAG_START + 'end' + RAW_TOKEN + BLOCK_TAG_END
 
     # internal use only: keep reference to templatetags functions
     _templatetags = {}
@@ -299,9 +308,11 @@ class CacheTag(object, metaclass=CacheTagMetaClass):
     def hash_args(self):
         """
         Take all the arguments passed after the fragment name and return a
-        hashed version which will be used in the cache key
+        hashed version which will be used in the cache key.
+        Uses the same algorithm as django `make_template_fragment_key`.
         """
-        return hashlib.md5(force_bytes(':'.join([urlquote(force_bytes(var)) for var in self.vary_on]))).hexdigest()
+        key = (b':'.join([str(var).encode() for var in self.vary_on]) + b":") if self.vary_on else b""
+        return hashlib.md5(key, usedforsecurity=False).hexdigest()
 
     def get_pk(self):
         """
@@ -579,9 +590,9 @@ class CacheTag(object, metaclass=CacheTagMetaClass):
         """
         tmpl = template.Template(''.join([
             # start by loading the cache library
-            template.BLOCK_TAG_START,
+            BLOCK_TAG_START,
             'load %s' % self.get_templatetag_module(),
-            template.BLOCK_TAG_END,
+            BLOCK_TAG_END,
             # and surround the cached template by "raw" tags
             self.RAW_TOKEN_START,
             self.content,
@@ -658,7 +669,7 @@ class CacheTag(object, metaclass=CacheTagMetaClass):
             while parser.tokens:
                 token = parser.next_token()
                 if token.token_type == TOKEN_BLOCK and token.contents == parse_until:
-                    return template.TextNode(''.join(text))
+                    return TextNode(''.join(text))
                 start, end = tag_mapping[token.token_type]
                 text.append('%s%s%s' % (start, token.contents, end))
             parser.unclosed_block_tag(parse_until)
@@ -712,10 +723,10 @@ class CacheTag(object, metaclass=CacheTagMetaClass):
 
             load_string = ''.join(
                 '%sload %s from %s%s' % (
-                    template.BLOCK_TAG_START,
+                    BLOCK_TAG_START,
                     ' '.join(names),
                     lib,
-                    template.BLOCK_TAG_END,
+                    BLOCK_TAG_END,
                 )
                 for lib, names in needed.items()
             )
