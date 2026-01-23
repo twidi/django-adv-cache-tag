@@ -11,7 +11,7 @@ Django advanced cache template tag:
 -  easily extendable/customizable
 
 Readable documentation on
-http://documentup.com/twidi/django-adv-cache-tag
+https://twidi.github.io/django-adv-cache-tag/
 
 Introduction
 ------------
